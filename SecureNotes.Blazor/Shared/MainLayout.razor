@@ -1,13 +1,21 @@
 ﻿@inherits LayoutComponentBase
 
+<PageTitle>Secure Notes</PageTitle>
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+        <div class="top-row">
+            <div class="login-container">
+                @* <AuthorizeView>
+                    <Authorized> *@
+                        <p class="login-info" style="color: black">Jesteś zalogowany jako TODO</p>
+                    @* </Authorized>Jesteś zalogowany jako @context.User.Identity.Name
+                </AuthorizeView> *@
+            </div>
         </div>
 
         <article class="content px-4">

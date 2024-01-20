@@ -1,5 +1,23 @@
 ﻿@page "/"
+@namespace SecureNotes.Blazor.Pages
 
-<PageTitle>SecureNotes</PageTitle>
+<PageTitle>Secure Notes</PageTitle>
 
-<h1>Secure Notes by Maja Nagarnowicz</h1>
+<div class="admin-panel-header">
+    <h1>Secure Notes</h1>
+</div>
+
+<div class="admin-panel-description">
+    <p>
+        Witaj w <strong>Secure Notes</strong>. To strona, która pozwala Ci w bezpieczny sposób przechowywać swoje notatki.
+        Dodatkowo możesz również udostępniać je innym użytkownikom.
+        Aby korzystać z aplikacji, musisz się zalogować.
+    </p>
+    <p class="author-info">
+        Projekt stworzony przez Maję Nagarnowicz, studentkę Wydziału Elektrycznego Politechniki Warszawskiej.
+    </p>
+</div>
+
+<div class="admin-panel-login-button">
+    <LoginLogoutButton />
+</div>
