@@ -1,14 +1,26 @@
 version: '3.8'
 
 services:
+
+  sql:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    container_name: sql
+    ports:
+      - "1433:1433" 
+    environment:
+      - ACCEPT_EULA=y
+      - SA_PASSWORD=A&VeryComplex123Password
+
   api:
     image: securenotes.api
     build:
       context: .
       dockerfile: SecureNotes.API/Dockerfile
+    depends_on:
+      - sql
     ports:
       - "5000:80"
-
+   
   blazor:
     image: securenotes.blazor
     build:
@@ -17,19 +29,3 @@ services:
     ports:
       - "8080:80"
 
-  mssql:
-      container_name: mssql-db
-      hostname: mssql-db
-      image: mcr.microsoft.com/mssql/server:2022-latest
-      environment:
-        ACCEPT_EULA: 'Y'
-        MSSQL_SA_PASSWORD: 'Passw0rd'
-        MSSQL_DATA_DIR: /var/opt/mssql/data
-        MSSQL_PID: 'Developer' 
-        MSSQL_TCP_PORT: 1433 
-      ports: 
-        - "1433:1433"
-      volumes:
-        - ./data:/var/opt/mssql/data
-        - ./log:/var/opt/mssql/log
-        - ./secrets:/var/opt/mssql/secrets
