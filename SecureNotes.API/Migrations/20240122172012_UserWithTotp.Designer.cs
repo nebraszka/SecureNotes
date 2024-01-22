@@ -12,8 +12,8 @@ using SecureNotes.API.Data;
 namespace SecureNotes.API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240120001214_Initial")]
-    partial class Initial
+    [Migration("20240122172012_UserWithTotp")]
+    partial class UserWithTotp
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
