@@ -8,18 +8,25 @@
 
 @* <AuthorizeView>
     <Authorized> *@
-        <button @onclick="Logout" class="btn btn-danger">Logout</button>
+        @* <button @onclick="Logout" class="btn btn-danger">Wyloguj się</button> *@
     @* </Authorized>
 
     <NotAuthorized> *@
-        <button @onclick="Login" class="btn btn-primary">Login</button>
+        <button @onclick="Login" class="btn btn-primary">Zaloguj się</button>
     @* </NotAuthorized> *@
 @* </AuthorizeView> *@
+
+<button @onclick="Register" class="btn btn-warning">Zarejestruj się</button>
 
 @code {
     private async Task Login()
     {
         NavigationManager.NavigateTo("login");
+    }
+
+    private async Task Register()
+    {
+        NavigationManager.NavigateTo("register");
     }
 
     private async Task Logout()

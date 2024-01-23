@@ -1,0 +1,51 @@
+@using Microsoft.AspNetCore.Components.Forms;
+@page "/register"
+
+<h3>Zarejestruj się</h3>
+<br />
+
+<EditForm Model="@registerUserDto" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="form-group">
+        <label for="username">Nazwa użytkownika:</label>
+        <InputText id="username" class="form-control" @bind-Value="registerUserDto.Username" />
+        <ValidationMessage For="@(() => registerUserDto.Username)" />
+    </div>
+
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <InputText id="email" class="form-control" type="email" @bind-Value="registerUserDto.Email" />
+        <ValidationMessage For="@(() => registerUserDto.Email)" />
+    </div>
+
+    <div class="form-group">
+        <label for="password">Hasło:</label>
+        <div class="input-group">
+            <InputText id="password" class="form-control" type="@passwordFieldType"
+                @bind-Value="registerUserDto.Password" />
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button" @onclick="TogglePasswordVisibility">
+                    @if (passwordVisible)
+                    {
+                        <i class="oi oi-eye-closed"></i>
+                    }
+                    else
+                    {
+                        <i class="oi oi-eye"></i>
+                    }
+                </button>
+            </div>
+        </div>
+        <PasswordStrengthMeter Password="@registerUserDto.Password" />
+        <ValidationMessage For="@(() => registerUserDto.Password)" />
+    </div>
+
+
+    <button class="btn submit-button" type="submit">Zarejestruj się</button>
+</EditForm>
+
+@if (registrationResult != null)
+{
+    <div style="color: red;">@registrationResult</div>
+}

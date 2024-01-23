@@ -19,7 +19,8 @@ services:
     depends_on:
       - sql
     ports:
-      - "5000:80"
+      # - "5000:80"
+      - "5001:443"
    
   blazor:
     image: securenotes.blazor
@@ -27,5 +28,5 @@ services:
       context: .
       dockerfile: SecureNotes.Blazor/Dockerfile
     ports:
-      - "8080:80"
-
+      # - "8080:80"
+      - "8443:443"

@@ -1,5 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OtpNet;
 
 using SecureNotes.API.Data;
@@ -14,28 +18,39 @@ namespace SecureNotes.API.Services
     public class AuthService : IAuthService
     {
         private readonly DataContext _context;
-        // TODO Add JWT Token Service
 
-        public AuthService(DataContext context)
+        private readonly JwtSettings _jwtSettings;
+
+        public AuthService(DataContext context, JwtSettings jwtSettings)
         {
             _context = context;
+            _jwtSettings = jwtSettings;
         }
 
-        public async Task<ServiceResponse<LoggedInUserDto>> Login(LoginUserDto loginUserDto, string ipAddress)
+        public async Task<ServiceResponse<string>> Login(LoginUserDto loginUserDto, string ipAddress)
         {
             // Check if user exists
             if (!await UserExists(loginUserDto.Username, loginUserDto.Email))
             {
-                return new ServiceResponse<LoggedInUserDto>
+                return new ServiceResponse<string>
                 {
                     Data = null,
                     Success = false,
-                    Message = "User does not exist"
+                    Message = "Podany użytkownik nie istnieje"
                 };
             }
 
             // Get user
-            User? currentUser = await _context!.Users!.FirstOrDefaultAsync(u => u.Username == loginUserDto.Username);
+            User? currentUser = null;
+
+            if (!string.IsNullOrWhiteSpace(loginUserDto.Username))
+            {
+                currentUser = await _context!.Users!.FirstOrDefaultAsync(u => u.Username == loginUserDto.Username);
+            }
+            else if (!string.IsNullOrWhiteSpace(loginUserDto.Email))
+            {
+                currentUser = await _context!.Users!.FirstOrDefaultAsync(u => u.Email == loginUserDto.Email);
+            }
 
             // Add new login attempt
             LoginAttempt loginAttempt = new LoginAttempt
@@ -56,11 +71,11 @@ namespace SecureNotes.API.Services
                         loginAttempt.Success = false;
                         _context.LoginAttempts!.Add(loginAttempt);
                         await _context.SaveChangesAsync();
-                        return new ServiceResponse<LoggedInUserDto>
+                        return new ServiceResponse<string>
                         {
                             Data = null,
                             Success = false,
-                            Message = "Login failed - wrong hash"
+                            Message = "Logowanie nie powiodło się"
                         };
                     }
                 }
@@ -77,24 +92,39 @@ namespace SecureNotes.API.Services
                 loginAttempt.Success = false;
                 _context.LoginAttempts!.Add(loginAttempt);
                 await _context.SaveChangesAsync();
-                return new ServiceResponse<LoggedInUserDto>
+                return new ServiceResponse<string>
                 {
                     Data = null,
                     Success = false,
-                    Message = "Login failed - wrong TOTP"
+                    Message = "Logowanie nie powiodło się"
                 };
             }
-            
-            // Return JWT token - for now hardcoded - TODO
+
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                new Claim(ClaimTypes.Email, currentUser.Email),
+                new Claim(ClaimTypes.NameIdentifier, currentUser.UserId.ToString()),
+            }),
+                Expires = DateTime.UtcNow.AddDays(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            var stringToken = tokenHandler.WriteToken(token);
 
             loginAttempt.Success = true;
             _context!.LoginAttempts!.Add(loginAttempt);
             await _context.SaveChangesAsync();
-            return new ServiceResponse<LoggedInUserDto>
+            
+            return new ServiceResponse<string>
             {
                 Success = true,
-                Message = "Login successful",
-                Data = new LoggedInUserDto { Jwt = "JWT Token" }
+                Message = "Logowanie powiodło się",
+                Data = stringToken
             };
         }
 
@@ -108,7 +138,7 @@ namespace SecureNotes.API.Services
                 {
                     Data = null,
                     Success = false,
-                    Message = "User already exists"
+                    Message = "Taki użytkownik już istnieje"
                 };
             }
 
@@ -157,7 +187,7 @@ namespace SecureNotes.API.Services
                 {
                     Data = registeredUserDto,
                     Success = true,
-                    Message = "User registered successfully"
+                    Message = "Użytkownik został zarejestrowany"
                 };
             }
             catch (Exception e)
@@ -166,24 +196,29 @@ namespace SecureNotes.API.Services
                 {
                     Data = null,
                     Success = false,
-                    Message = "Registration failed"
+                    Message = "Wystąpił błąd podczas rejestracji użytkownika"
                 };
             }
         }
 
+        // TODO
         private async Task<bool> UserExists(string username, string email)
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(email))
             {
                 return false;
             }
 
-            if (await _context!.Users!.AnyAsync(u => u.Username == username && u.Email == email))
+            if (string.IsNullOrWhiteSpace(username))
             {
-                return true;
+                return await _context!.Users!.AnyAsync(u => u.Email == email);
+            }
+            else if (string.IsNullOrWhiteSpace(email))
+            {
+                return await _context!.Users!.AnyAsync(u => u.Username == username);
             }
 
-            return false;
+            return await _context!.Users!.AnyAsync(u => u.Username == username && u.Email == email);
         }
     }
 }

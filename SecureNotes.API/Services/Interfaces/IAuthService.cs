@@ -5,7 +5,7 @@ namespace SecureNotes.API.Services.Interfaces
 {
     public interface IAuthService
     {
-        Task<ServiceResponse<LoggedInUserDto>> Login(LoginUserDto loginUserDto, string ipAddress);
+        Task<ServiceResponse<string>> Login(LoginUserDto loginUserDto, string ipAddress);
         Task<ServiceResponse<RegisteredUserDto>> Register(RegisterUserDto registerUserDto);
     }
 }

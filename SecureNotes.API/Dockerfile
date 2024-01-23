@@ -3,6 +3,9 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
+COPY ssl/mykey.key /https/
+COPY ssl/mycert.crt /https/
+
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
 COPY ["SecureNotes.API/SecureNotes.API.csproj", "SecureNotes.API/"]

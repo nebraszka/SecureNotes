@@ -13,19 +13,36 @@ namespace SecureNotes.API.Controllers
     {
         private readonly IAuthService _authService;
 
-        public AuthController(DataContext context)
+        public AuthController(DataContext context, JwtSettings jwtSettings)
         {
-            _authService = new AuthService(context);
+            _authService = new AuthService(context, jwtSettings);
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<ServiceResponse<LoggedInUserDto>>> Login(LoginUserDto loginUserDto)
+        public async Task<ActionResult<LoginServiceResponse>> Login(LoginUserDto loginUserDto)
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
 
             var response = await _authService.Login(loginUserDto, ipAddress!);
 
-            return Ok(response);
+            var encryptorToken = response.Data;
+            if(encryptorToken == null)
+            {
+                return Unauthorized();
+            }
+
+            // Pass jwt inside HttpOnly cookie
+            HttpContext.Response.Cookies.Append("jwt", encryptorToken!,
+                new CookieOptions
+                {
+                    HttpOnly = true, // So JavaScript can't access the cookie
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7),
+                    IsEssential = true
+                });
+
+            return Ok();
         }
 
         [HttpPost("register")]
