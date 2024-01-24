@@ -1,6 +1,7 @@
-@inject NavigationManager NavigationManager
 @namespace SecureNotes.Blazor.Pages
 
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService LocalStorageService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <AuthorizeView>
@@ -28,7 +29,7 @@
 
     private async Task Logout()
     {
+        await LocalStorageService.RemoveItemAsync("token");
+        await AuthenticationStateProvider.GetAuthenticationStateAsync();
     }
-
-
 }
