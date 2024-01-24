@@ -36,7 +36,7 @@ namespace SecureNotes.API.Services
                 {
                     Data = null,
                     Success = false,
-                    Message = "Podany użytkownik nie istnieje"
+                    Message = "Logowanie nie powiodło się: użytkownik nie istnieje"
                 };
             }
 
@@ -75,7 +75,7 @@ namespace SecureNotes.API.Services
                         {
                             Data = null,
                             Success = false,
-                            Message = "Logowanie nie powiodło się"
+                            Message = "Logowanie nie powiodło się: nieprawidłowe hasło"
                         };
                     }
                 }
@@ -96,7 +96,7 @@ namespace SecureNotes.API.Services
                 {
                     Data = null,
                     Success = false,
-                    Message = "Logowanie nie powiodło się"
+                    Message = "Logowanie nie powiodło się: nieprawidłowy kod TOTP"
                 };
             }
 
@@ -108,6 +108,7 @@ namespace SecureNotes.API.Services
                 {
                 new Claim(ClaimTypes.Email, currentUser.Email),
                 new Claim(ClaimTypes.NameIdentifier, currentUser.UserId.ToString()),
+                new Claim(ClaimTypes.Name, currentUser.Username),
             }),
                 Expires = DateTime.UtcNow.AddDays(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

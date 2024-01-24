@@ -17,7 +17,7 @@ namespace SecureNotes.Blazor.Services
             _httpClient = httpClient;
         }
 
-        public async Task<ServiceResponse<LoggedInUserDto>> Login(LoginUserDto loginUserDto)
+        public async Task<ServiceResponse<string>> Login(LoginUserDto loginUserDto)
         {
             try
             {
@@ -26,23 +26,23 @@ namespace SecureNotes.Blazor.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var responseBody = await response.Content.ReadAsStringAsync();
-                    return JsonConvert.DeserializeObject<ServiceResponse<LoggedInUserDto>>(responseBody)!;
+                    return JsonConvert.DeserializeObject<ServiceResponse<string>>(responseBody)!;
                 }
                 else
                 {
-                    return new ServiceResponse<LoggedInUserDto>
+                    return new ServiceResponse<string>
                     {
                         Success = false,
-                        Message = "Wystąpił błąd podczas logowania: " + response.StatusCode + " " + response.ReasonPhrase
+                        Message = "Błąd logowania"
                     };
                 }
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<LoggedInUserDto>
+                return new ServiceResponse<string>
                 {
                     Success = false,
-                    Message = "Wystąpił błąd podczas logowania: " + ex.Message
+                    Message = "Błąd logowania"
                 };
             }
         }

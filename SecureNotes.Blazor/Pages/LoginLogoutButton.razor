@@ -1,20 +1,17 @@
 @inject NavigationManager NavigationManager
 @namespace SecureNotes.Blazor.Pages
 
-@* @inject TokenService TokenService *@
-@* @inject AuthenticationStateProvider AuthenticationStateProvider *@
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-@* @using SelfAID.WebClient.Authorization *@
+<AuthorizeView>
+    <Authorized>
+        <button @onclick="Logout" class="btn btn-danger">Wyloguj się</button>
+    </Authorized>
 
-@* <AuthorizeView>
-    <Authorized> *@
-        @* <button @onclick="Logout" class="btn btn-danger">Wyloguj się</button> *@
-    @* </Authorized>
-
-    <NotAuthorized> *@
+    <NotAuthorized>
         <button @onclick="Login" class="btn btn-primary">Zaloguj się</button>
-    @* </NotAuthorized> *@
-@* </AuthorizeView> *@
+    </NotAuthorized>
+</AuthorizeView>
 
 <button @onclick="Register" class="btn btn-warning">Zarejestruj się</button>
 
@@ -31,12 +28,6 @@
 
     private async Task Logout()
     {
-        @* TokenService.RemoveToken(); *@
-
-        @* var customAuthStateProvider = AuthenticationStateProvider as CustomAuthStateProvider; *@
-        @* customAuthStateProvider?.MarkUserAsLoggedOut(); *@
-
-        @* NavigationManager.NavigateTo("login", forceLoad: true); *@
     }
 
 

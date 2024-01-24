@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using SecureNotes.Blazor.Models.UserDtos;
 using SecureNotes.Blazor.Services.Interfaces;
 
@@ -10,14 +9,17 @@ public partial class Login : ComponentBase
     [Inject]
     private IAuthService authService { get; set; }
 
-    // [Inject]
-    // private AuthenticationStateProvider authenticationStateProvider { get; set; }
+    [Inject]
+    private AuthenticationStateProvider authenticationStateProvider { get; set; }
 
     [Inject]
     private NavigationManager navigationManager { get; set; }
 
     [Inject]
     private HttpClient Http { get; set; }
+
+    [Inject]
+    private ILocalStorageService localStorageService { get; set; }
 
     protected string Message = string.Empty;
     public LoginUserDto user = new LoginUserDto();
@@ -32,13 +34,12 @@ public partial class Login : ComponentBase
         }
 
         var response = await authService.Login(user);
-        if (response != null && response.Success)
-        {
-            // tokenService.SetToken(response.Data);
+        if (response.Success)
+        {   
+            var token = response.Data;
+            await localStorageService.SetItemAsync("token", token);
+            await authenticationStateProvider.GetAuthenticationStateAsync();
 
-            // var customAuthProvider = authenticationStateProvider as CustomAuthStateProvider;
-            // customAuthProvider?.NotifyUserAuthentication(response.Data);
-            
             navigationManager.NavigateTo("/");
         }
         else

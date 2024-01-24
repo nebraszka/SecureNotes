@@ -1,4 +1,20 @@
 ﻿@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code {
+    private string uniqueName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            uniqueName = user.FindFirst(c => c.Type == "unique_name")?.Value ?? "Nieznany użytkownik";
+        }
+    }
+}
 
 <PageTitle>Secure Notes</PageTitle>
 
@@ -10,11 +26,11 @@
     <main>
         <div class="top-row">
             <div class="login-container">
-                @* <AuthorizeView>
-                    <Authorized> *@
-                        <p class="login-info" style="color: black">Jesteś zalogowany jako TODO</p>
-                    @* </Authorized>Jesteś zalogowany jako @context.User.Identity.Name
-                </AuthorizeView> *@
+                <AuthorizeView>
+                    <Authorized>
+                        <p class="login-info" style="color: black">Jesteś zalogowany jako @uniqueName</p>
+                    </Authorized>
+                </AuthorizeView>
             </div>
         </div>
 
