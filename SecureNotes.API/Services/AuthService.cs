@@ -27,29 +27,47 @@ namespace SecureNotes.API.Services
             _jwtSettings = jwtSettings;
         }
 
+        private string loginFailedMessage = "Logowanie nie powiodło się";
+        private string loginSuccessMessage = "Logowanie powiodło się";
+        private string registerFailedMessage = "Rejestracja nie powiodła się";
+        private string registerSuccessMessage = "Rejestracja powiodła się";
+        private string userExistsMessage = "Użytkownik o podanej nazwie lub adresie email już istnieje";
+
         public async Task<ServiceResponse<string>> Login(LoginUserDto loginUserDto, string ipAddress)
         {
-            // Check if user exists
             if (!await UserExists(loginUserDto.Username, loginUserDto.Email))
             {
                 return new ServiceResponse<string>
                 {
                     Data = null,
                     Success = false,
-                    Message = "Logowanie nie powiodło się: użytkownik nie istnieje"
+                    Message = loginFailedMessage
                 };
             }
 
-            // Get user
-            User? currentUser = null;
-
-            if (!string.IsNullOrWhiteSpace(loginUserDto.Username))
+            var currentUser = await GetUser(loginUserDto);
+            if(currentUser == null)
             {
-                currentUser = await _context!.Users!.FirstOrDefaultAsync(u => u.Username == loginUserDto.Username);
+                return new ServiceResponse<string>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = loginFailedMessage
+                };
             }
-            else if (!string.IsNullOrWhiteSpace(loginUserDto.Email))
+
+            // Delay login attempt if there were failed login attempts in last 15 minutes
+            await SetLoginDelay(currentUser);
+
+            // Check if account is locked
+            if (currentUser!.IsAccountLocked && currentUser.AccountLockoutEnd > DateTime.Now)
             {
-                currentUser = await _context!.Users!.FirstOrDefaultAsync(u => u.Email == loginUserDto.Email);
+                return new ServiceResponse<string>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = "Konto jest zablokowane"
+                };
             }
 
             // Add new login attempt
@@ -71,11 +89,14 @@ namespace SecureNotes.API.Services
                         loginAttempt.Success = false;
                         _context.LoginAttempts!.Add(loginAttempt);
                         await _context.SaveChangesAsync();
+
+                        string loginAttemptMsg = await CheckLoginAttempts(currentUser);
+
                         return new ServiceResponse<string>
                         {
                             Data = null,
                             Success = false,
-                            Message = "Logowanie nie powiodło się: nieprawidłowe hasło"
+                            Message = string.IsNullOrEmpty(loginAttemptMsg) ? loginFailedMessage : loginAttemptMsg
                         };
                     }
                 }
@@ -92,11 +113,14 @@ namespace SecureNotes.API.Services
                 loginAttempt.Success = false;
                 _context.LoginAttempts!.Add(loginAttempt);
                 await _context.SaveChangesAsync();
+
+                string loginAttemptMsg = await CheckLoginAttempts(currentUser);
+
                 return new ServiceResponse<string>
                 {
                     Data = null,
                     Success = false,
-                    Message = "Logowanie nie powiodło się: nieprawidłowy kod TOTP"
+                    Message = string.IsNullOrEmpty(loginAttemptMsg) ? loginFailedMessage : loginAttemptMsg
                 };
             }
 
@@ -120,12 +144,12 @@ namespace SecureNotes.API.Services
             loginAttempt.Success = true;
             _context!.LoginAttempts!.Add(loginAttempt);
             await _context.SaveChangesAsync();
-            
+
             return new ServiceResponse<string>
             {
+                Data = stringToken,
                 Success = true,
-                Message = "Logowanie powiodło się",
-                Data = stringToken
+                Message = loginSuccessMessage
             };
         }
 
@@ -133,13 +157,13 @@ namespace SecureNotes.API.Services
         public async Task<ServiceResponse<RegisteredUserDto>> Register(RegisterUserDto registerUserDto)
         {
             // Check if user exists
-            if (await UserExists(registerUserDto.Username, registerUserDto.Email))
+            if (await _context!.Users!.AnyAsync(u => u.Username == registerUserDto.Username || u.Email == registerUserDto.Email))
             {
                 return new ServiceResponse<RegisteredUserDto>
                 {
                     Data = null,
                     Success = false,
-                    Message = "Taki użytkownik już istnieje"
+                    Message = userExistsMessage
                 };
             }
 
@@ -162,7 +186,7 @@ namespace SecureNotes.API.Services
                     PasswordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(registerUserDto.Password)),
                     // Using salt to prevent rainbow table attacks
                     PasswordSalt = hmac.Key,
-                    Notes = new List<Note>(),
+                    // Notes = new List<Note>(),
                     LoginAttempts = new List<LoginAttempt>(),
                     TOTPSecret = KeyGeneration.GenerateRandomKey(20),
                     Iv = iv
@@ -175,7 +199,7 @@ namespace SecureNotes.API.Services
                 TOTPSecret = Base32Encoding.ToString(newUser.TOTPSecret)
             };
 
-            // Encrypt TOTP secret
+            // Encrypt TOTP secret before saving to database
             byte[] key = AesEncryption.CreateAesKeyFromPassword(registerUserDto.Password, newUser.PasswordSalt);
             string totpSecretBase64 = Convert.ToBase64String(newUser.TOTPSecret);
             newUser.TOTPSecret = Convert.FromBase64String(AesEncryption.Encrypt(totpSecretBase64, Convert.ToBase64String(key), newUser.Iv));
@@ -188,7 +212,7 @@ namespace SecureNotes.API.Services
                 {
                     Data = registeredUserDto,
                     Success = true,
-                    Message = "Użytkownik został zarejestrowany"
+                    Message = registerSuccessMessage
                 };
             }
             catch (Exception e)
@@ -197,12 +221,73 @@ namespace SecureNotes.API.Services
                 {
                     Data = null,
                     Success = false,
-                    Message = "Wystąpił błąd podczas rejestracji użytkownika"
+                    Message = registerFailedMessage
                 };
             }
         }
 
-        // TODO
+        private async Task<User?> GetUser(LoginUserDto loginUserDto)
+        {
+            return !string.IsNullOrWhiteSpace(loginUserDto.Username)
+                ? await _context!.Users!.FirstOrDefaultAsync(u => u.Username == loginUserDto.Username)
+                : await _context!.Users!.FirstOrDefaultAsync(u => u.Email == loginUserDto.Email);
+        }
+
+        private async Task SetLoginDelay(User user)
+        {
+            // Delay login attempt if there were failed login attempts in last 15 minutes
+            var failedLoginAttemptsCount = await _context.LoginAttempts!.CountAsync(a => a.UserId == user.UserId && a.Success == false && a.Time > DateTime.Now.AddMinutes(-15));
+
+            if (failedLoginAttemptsCount > 0)
+            {
+                int delay = Math.Min(30000, 1000 * (int)Math.Pow(2, failedLoginAttemptsCount - 1));
+                await Task.Delay(delay);
+            }
+        }
+
+        private async Task AddLoginAttempt(User user, string ipAddress, bool isSuccess)
+        {
+            LoginAttempt loginAttempt = new LoginAttempt
+            {
+                UserId = user.UserId,
+                IpAddress = ipAddress,
+                Time = DateTime.Now,
+                Success = isSuccess
+            };
+
+            _context!.LoginAttempts!.Add(loginAttempt);
+            await _context.SaveChangesAsync();
+        }
+
+        private bool VerifyPasswordHash(string password, byte[] storedHash, byte[] storedSalt)
+        {
+            using (var hmac = new HMACSHA512(storedSalt))
+            {
+                var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                return computedHash.SequenceEqual(storedHash);
+            }
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtSettings!.Secret!);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+            }),
+                Expires = DateTime.UtcNow.AddDays(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
         private async Task<bool> UserExists(string username, string email)
         {
             if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(email))
@@ -210,16 +295,23 @@ namespace SecureNotes.API.Services
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(username))
+            return await _context!.Users!.AnyAsync(u => u.Email == email) || await _context!.Users!.AnyAsync(u => u.Username == username);
+        }
+
+        private async Task<string> CheckLoginAttempts(User user)
+        {
+            // Check failed login attempts in last 15 minutes
+            var failedLoginAttemptsCount = await _context.LoginAttempts!.CountAsync(a => a.UserId == user.UserId && a.Success == false && a.Time > DateTime.Now.AddMinutes(-15));
+
+            if (failedLoginAttemptsCount >= 5)
             {
-                return await _context!.Users!.AnyAsync(u => u.Email == email);
-            }
-            else if (string.IsNullOrWhiteSpace(email))
-            {
-                return await _context!.Users!.AnyAsync(u => u.Username == username);
+                user.IsAccountLocked = true;
+                user.AccountLockoutEnd = DateTime.Now.AddMinutes(15);
+                await _context.SaveChangesAsync();
+                return loginFailedMessage + ". " + "Konto zostało zablokowane na 15 minut";
             }
 
-            return await _context!.Users!.AnyAsync(u => u.Username == username && u.Email == email);
+            return string.Empty;
         }
     }
 }

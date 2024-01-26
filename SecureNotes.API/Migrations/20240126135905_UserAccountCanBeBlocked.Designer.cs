@@ -12,8 +12,8 @@ using SecureNotes.API.Data;
 namespace SecureNotes.API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240122172012_UserWithTotp")]
-    partial class UserWithTotp
+    [Migration("20240126135905_UserAccountCanBeBlocked")]
+    partial class UserAccountCanBeBlocked
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,47 +51,21 @@ namespace SecureNotes.API.Migrations
                     b.ToTable("LoginAttempts");
                 });
 
-            modelBuilder.Entity("SecureNotes.Shared.Models.Note", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime>("CreationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsPublic")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Notes");
-                });
-
             modelBuilder.Entity("SecureNotes.Shared.Models.User", b =>
                 {
                     b.Property<Guid>("UserId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("AccountLockoutEnd")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAccountLocked")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Iv")
                         .IsRequired()
@@ -111,8 +85,7 @@ namespace SecureNotes.API.Migrations
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("UserId");
 
@@ -128,22 +101,9 @@ namespace SecureNotes.API.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("SecureNotes.Shared.Models.Note", b =>
-                {
-                    b.HasOne("SecureNotes.Shared.Models.User", "User")
-                        .WithMany("Notes")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SecureNotes.Shared.Models.User", b =>
                 {
                     b.Navigation("LoginAttempts");
-
-                    b.Navigation("Notes");
                 });
 #pragma warning restore 612, 618
         }
