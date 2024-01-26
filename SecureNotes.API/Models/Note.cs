@@ -10,14 +10,16 @@ namespace SecureNotes.Shared.Models
         [ForeignKey("UserId")]
         public Guid UserId { get; set; }
         [Required]
-        [StringLength(30)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         [Required]
-        [StringLength(1000)]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
         [Required]
         public DateTime CreationDate { get; set; }
         public bool IsPublic { get; set; } = false;
-        public virtual User User { get; set; }
+        public bool IsEncrypted { get; set; } = false;
+
+        public byte[]? PasswordHash { get; set; }
+        public byte[]? PasswordSalt { get; set; }
+        public string? Iv { get; set; }
     }
 }

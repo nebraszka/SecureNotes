@@ -22,7 +22,7 @@ namespace SecureNotes.Shared.Models
         public bool IsAccountLocked { get; set; }
         public DateTime? AccountLockoutEnd { get; set; }
 
-        // public virtual ICollection<Note> Notes { get; set; }
+        public virtual ICollection<Note> Notes { get; set; }
 
         public ICollection<LoginAttempt> LoginAttempts { get; set; }
     }
