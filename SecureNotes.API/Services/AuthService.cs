@@ -46,7 +46,7 @@ namespace SecureNotes.API.Services
             }
 
             var currentUser = await GetUser(loginUserDto);
-            if(currentUser == null)
+            if (currentUser == null)
             {
                 return new ServiceResponse<string>
                 {
@@ -124,30 +124,15 @@ namespace SecureNotes.API.Services
                 };
             }
 
-            var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                new Claim(ClaimTypes.Email, currentUser.Email),
-                new Claim(ClaimTypes.NameIdentifier, currentUser.UserId.ToString()),
-                new Claim(ClaimTypes.Name, currentUser.Username),
-            }),
-                Expires = DateTime.UtcNow.AddDays(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-
-            var stringToken = tokenHandler.WriteToken(token);
-
             loginAttempt.Success = true;
             _context!.LoginAttempts!.Add(loginAttempt);
             await _context.SaveChangesAsync();
 
+            var token = GenerateJwtToken(currentUser);
+
             return new ServiceResponse<string>
             {
-                Data = stringToken,
+                Data = token,
                 Success = true,
                 Message = loginSuccessMessage
             };
@@ -268,26 +253,6 @@ namespace SecureNotes.API.Services
             }
         }
 
-        private string GenerateJwtToken(User user)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_jwtSettings!.Secret!);
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-            }),
-                Expires = DateTime.UtcNow.AddDays(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
-        }
-
         private async Task<bool> UserExists(string username, string email)
         {
             if (string.IsNullOrWhiteSpace(username) && string.IsNullOrWhiteSpace(email))
@@ -312,6 +277,26 @@ namespace SecureNotes.API.Services
             }
 
             return string.Empty;
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+            }),
+                Expires = DateTime.UtcNow.AddDays(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            return tokenHandler.WriteToken(token);
         }
     }
 }

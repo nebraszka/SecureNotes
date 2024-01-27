@@ -5,6 +5,6 @@ namespace SecureNotes.API.Models.UserDtos
 {
     public class RegisteredUserDto
     {
-        public string TOTPSecret { get; set; }
+        public string TOTPSecret { get; set; } = string.Empty;
     }
 }

@@ -48,6 +48,48 @@ namespace SecureNotes.API.Migrations
                     b.ToTable("LoginAttempts");
                 });
 
+            modelBuilder.Entity("SecureNotes.Shared.Models.Note", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsEncrypted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Iv")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("PasswordHash")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<byte[]>("PasswordSalt")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notes");
+                });
+
             modelBuilder.Entity("SecureNotes.Shared.Models.User", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -98,9 +140,20 @@ namespace SecureNotes.API.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SecureNotes.Shared.Models.Note", b =>
+                {
+                    b.HasOne("SecureNotes.Shared.Models.User", null)
+                        .WithMany("Notes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SecureNotes.Shared.Models.User", b =>
                 {
                     b.Navigation("LoginAttempts");
+
+                    b.Navigation("Notes");
                 });
 #pragma warning restore 612, 618
         }

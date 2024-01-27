@@ -10,7 +10,7 @@ namespace SecureNotes.Shared.Models
         [ForeignKey("UserId")]
         public Guid UserId { get; set; }
         public bool Success { get; set; }
-        public string IpAddress { get; set; }
+        public string IpAddress { get; set; } = string.Empty;
         public DateTime Time { get; set; }
     }
 }
