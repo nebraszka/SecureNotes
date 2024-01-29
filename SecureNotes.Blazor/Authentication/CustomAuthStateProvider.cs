@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using SecureNotes.Blazor.Services.Interfaces;
@@ -8,23 +9,35 @@ namespace SecureNotes.Blazor.Authentication
     {
         private readonly ILocalStorageService localStorageService;
 
-        public CustomAuthStateProvider(ILocalStorageService localStorageService)
+        private readonly HttpClient _httpClient;
+
+        public CustomAuthStateProvider(ILocalStorageService localStorageService, HttpClient httpClient)
         {
             this.localStorageService = localStorageService;
+            _httpClient = httpClient;
         }
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             var token = await localStorageService.GetItemAsync<string>("token");
+            var identity = new ClaimsIdentity();
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+            _httpClient.DefaultRequestHeaders.Remove("userId");
 
-            var identinty = new ClaimsIdentity();
-
-            if(!string.IsNullOrEmpty(token))
+            if (!string.IsNullOrEmpty(token))
             {
-                identinty = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
+                identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
+
+                var claims = ParseClaimsFromJwt(token);
+                var userIdClaim = claims.FirstOrDefault(c => c.Type == "nameid");
+                if (userIdClaim != null)
+                {
+                    _httpClient.DefaultRequestHeaders.Add("userId", userIdClaim.Value);
+                }
             }
 
-            var user = new ClaimsPrincipal(identinty);
+            var user = new ClaimsPrincipal(identity);
             var state = new AuthenticationState(user);
 
             NotifyAuthenticationStateChanged(Task.FromResult(state));
@@ -37,7 +50,7 @@ namespace SecureNotes.Blazor.Authentication
             var payload = jwt.Split('.')[1];
             var jsonBytes = ParseBase64WithoutPadding(payload);
             var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
-            return keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()));
+            return keyValuePairs!.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()!));
         }
 
         private static byte[] ParseBase64WithoutPadding(string base64)
@@ -48,6 +61,12 @@ namespace SecureNotes.Blazor.Authentication
                 case 3: base64 += "="; break;
             }
             return Convert.FromBase64String(base64);
+        }
+
+        public async Task MarkUserAsAuthenticated(string token)
+        {
+            await localStorageService.SetItemAsync("token", token);
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
     }
 

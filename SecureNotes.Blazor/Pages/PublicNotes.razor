@@ -1,7 +1,7 @@
-@page "/my-notes"
+@page "/public-notes"
 @attribute [Authorize]
 
-<h3>Moje notatki</h3>
+<h3>Notatki publiczne</h3>
 
 @if (!string.IsNullOrEmpty(notesListMessage))
 {
@@ -12,7 +12,7 @@
 
 @if (notes == null)
 {
-    <p><em>Ładowanie...</em></p>
+    <p><em>Loading...</em></p>
 }
 else
 {
@@ -25,16 +25,13 @@ else
             <th>
                 Podgląd
             </th>
-            <th>
-                Zarządzaj
-            </th>
         </tr>
     </thead>
     <tbody>
         @if (notes.Count == 0)
             {
                 <tr>
-                    <td colspan="3">Brak notatek</td>
+                    <td colspan="2">Brak notatek</td>
                 </tr>
             }
             @foreach (var note in notes)
@@ -42,10 +39,7 @@ else
                 <tr>
                     <td>@note.Title</td>
                     <td>
-                        <a href="@($"note-content/{note.NoteId}?isEncrypted={note.IsEncrypted}")" class="btn btn-primary">Zobacz</a>
-                    </td>
-                    <td>
-                        @* <a href="@($"note/{note.NoteId}")" class="btn btn-primary">Zarządzaj</a> *@
+                        <a href="@($"note-content/{note.NoteId}?isEncrypted=false")" class="btn btn-primary">Zobacz</a>
                     </td>
                 </tr>
             }
@@ -53,4 +47,4 @@ else
     </table>
 }
 
-<a href="@($"note")" class="btn btn-primary">Dodaj nową notatkę</a>
+@* <a href="@($"note")" class="btn btn-primary">Dodaj nową notatkę</a> *@

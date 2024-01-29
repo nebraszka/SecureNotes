@@ -1,0 +1,94 @@
+@using SecureNotes.Blazor.Services
+@using SecureNotes.API.Models.NoteDtos
+
+@page "/note-content/{noteId:guid}"
+@inject INoteService noteService
+@inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
+<h3>Szczegóły Notatki</h3>
+
+@if (IsEncrypted)
+{
+    <p>Notatka jest zaszyfrowana. Wprowadź hasło, aby ją odszyfrować.</p>
+    <EditForm Model="@this" OnValidSubmit="DecryptNote">
+        <div class="form-group">
+            <label for="password">Hasło</label>
+            <InputText id="password" class="form-control" @bind-Value="password" type="password" />
+        </div>
+        <button type="submit" class="btn btn-primary">Odszyfruj</button>
+    </EditForm>
+}
+else if (!loading && noteDetails != null)
+{
+    <h4>@noteDetails.Title</h4>
+    <p>@noteDetails.Content</p>
+    <p><em>Utworzono: @noteDetails.CreationDate.ToShortDateString()</em></p>
+    <p>Publiczna: @noteDetails.IsPublic</p>
+    <p>Zaszyfrowana: @noteDetails.IsEncrypted</p>
+}
+else
+{
+    <p>Notatka nie została znaleziona. @password</p>
+}
+
+
+<a class="btn btn-warning" href="my-notes">Powrót</a>
+
+@code {
+    [Parameter]
+    public Guid noteId { get; set; }
+    public bool IsEncrypted { get; set; }
+
+    private GetNoteDetailsDto? noteDetails = null!;
+    private string? password;
+    private bool loading = true;
+
+    private async Task DecryptNote()
+    {
+        if (string.IsNullOrEmpty(password))
+        {
+            return;
+        }
+
+        IsEncrypted = false;
+        await LoadNoteDetails();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("isEncrypted", out var
+        isEncryptedValue))
+        {
+            IsEncrypted = bool.Parse(isEncryptedValue);
+        }
+
+        if (!IsEncrypted)
+        {
+            await LoadNoteDetails();
+        }
+    }
+
+    private async Task LoadNoteDetails()
+    {
+        try
+        {
+            var response = await noteService.GetNoteDetails(noteId, password);
+            if (response.Success)
+            {
+                noteDetails = response.Data!;
+                loading = false;
+            }
+            else
+            {
+                // Obsługa błędu (np. złe hasło)
+            }
+        }
+        catch
+        {
+            // Obsługa wyjątków
+        }
+    }
+}

@@ -15,6 +15,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:5001/") });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddBlazoredLocalStorage();

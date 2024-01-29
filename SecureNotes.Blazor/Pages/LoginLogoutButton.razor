@@ -11,10 +11,9 @@
 
     <NotAuthorized>
         <button @onclick="Login" class="btn btn-primary">Zaloguj się</button>
+        <button @onclick="Register" class="btn btn-warning">Zarejestruj się</button>
     </NotAuthorized>
 </AuthorizeView>
-
-<button @onclick="Register" class="btn btn-warning">Zarejestruj się</button>
 
 @code {
     private async Task Login()

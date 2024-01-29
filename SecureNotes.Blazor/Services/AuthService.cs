@@ -37,7 +37,7 @@ namespace SecureNotes.Blazor.Services
                     };
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new ServiceResponse<string>
                 {
@@ -63,16 +63,16 @@ namespace SecureNotes.Blazor.Services
                     return new ServiceResponse<RegisteredUserDto>
                     {
                         Success = false,
-                        Message = "Wystąpił błąd podczas rejestracji: " + response.StatusCode + " " + response.ReasonPhrase
+                        Message = "Wystąpił błąd podczas rejestracji"
                     };
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new ServiceResponse<RegisteredUserDto>
                 {
                     Success = false,
-                    Message = "Wystąpił błąd podczas rejestracji: " + ex.Message
+                    Message = "Wystąpił błąd podczas rejestracji"
                 };
             }
         }

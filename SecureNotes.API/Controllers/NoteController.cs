@@ -25,7 +25,7 @@ namespace SecureNotes.API.Controllers
             return Ok(response);
         }
 
-        [HttpGet("all/{userId}"), Authorize]
+        [HttpGet("all"), Authorize]
         public async Task<ActionResult<ServiceResponse<List<GetNoteDto>>>> GetAllNotes([FromHeader] Guid userId)
         {
             var response = await _noteService.GetAllNotes(userId);
@@ -33,7 +33,7 @@ namespace SecureNotes.API.Controllers
             return Ok(response);
         }
 
-        [HttpGet("{noteId}"), AllowAnonymous]
+        [HttpGet("{noteId}"), Authorize]
         public async Task<ActionResult<ServiceResponse<GetNoteDetailsDto>>> GetNoteDetails([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string? password)
         {
             var response = await _noteService.GetNoteDetails(userId, noteId, password);
