@@ -48,5 +48,53 @@ namespace SecureNotes.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpDelete("{noteId}"), Authorize]
+        public async Task<ActionResult<ServiceResponseWithoutData>> DeleteNote([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string? password)
+        {
+            var response = await _noteService.DeleteNote(userId, noteId, password);
+
+            return Ok(response);
+        }
+
+        [HttpPost("{noteId}/encrypt"), Authorize]
+        public async Task<ActionResult<ServiceResponseWithoutData>> EncryptNote([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string password)
+        {
+            var response = await _noteService.EncryptNote(userId, noteId, password);
+
+            return Ok(response);
+        }
+
+        [HttpPost("{noteId}/decrypt"), Authorize]
+        public async Task<ActionResult<ServiceResponseWithoutData>> DecryptNote([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string password)
+        {
+            var response = await _noteService.DecryptNote(userId, noteId, password);
+
+            return Ok(response);
+        }
+
+        [HttpPost("{noteId}/make-public"), Authorize]
+        public async Task<ActionResult<ServiceResponseWithoutData>> MakeNotePublic([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string? password)
+        {
+            var response = await _noteService.MakeNotePublic(userId, noteId, password);
+
+            return Ok(response);
+        }
+
+        [HttpPut("{noteId}"), Authorize]
+        public async Task<ActionResult<ServiceResponseWithoutData>> UpdateNote([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromBody] UpdateNoteDto updatedNote)
+        {
+            var response = await _noteService.UpdateNote(userId, noteId, updatedNote);
+
+            return Ok(response);
+        }
+
+        [HttpPost("{noteId}/change-password"), Authorize]
+        public async Task<ActionResult<ServiceResponseWithoutData>> ChangeNotePassword([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string oldPassword, [FromQuery] string newPassword)
+        {
+            var response = await _noteService.ChangeNotePassword(userId, noteId, oldPassword, newPassword);
+
+            return Ok(response);
+        }
     }
 }

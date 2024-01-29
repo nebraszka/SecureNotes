@@ -1,6 +1,6 @@
 namespace SecureNotes.API.Models.NoteDtos
 {
-    public class DeleteNoteDto
+    public class MakeNotePublicDto
     {
         public string? Password { get; set; } = string.Empty;
     }
