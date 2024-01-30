@@ -8,14 +8,13 @@ namespace SecureNotes.API.Services.Interfaces
     {
         Task<ServiceResponse<List<GetNoteDto>>> GetAllPublicNotes();
         Task<ServiceResponse<List<GetNoteDto>>> GetAllNotes(Guid userId);
-        Task<ServiceResponse<GetNoteDetailsDto>> GetNoteDetails(Guid userId, Guid noteId, string? password);
+        Task<ServiceResponse<GetNoteDetailsDto>> GetNoteDetails(Guid userId, GetNoteDetailsRequestDto getNoteDetailsRequest);
         Task<ServiceResponseWithoutData> CreateNote(Guid userId, AddNoteDto newNote);
-        Task<ServiceResponseWithoutData> UpdateNote(Guid userId, Guid noteId, UpdateNoteDto updatedNote);
-        Task<ServiceResponseWithoutData> DeleteNote(Guid userId, Guid noteId, string? password);
-        Task<ServiceResponseWithoutData> EncryptNote(Guid userId, Guid noteId, string password);
-        Task<ServiceResponseWithoutData> DecryptNote(Guid userId, Guid noteId, string password);
-        Task<ServiceResponseWithoutData> MakeNotePublic(Guid userId, Guid noteId, string? password);
-
-        Task<ServiceResponseWithoutData> ChangeNotePassword(Guid userId, Guid noteId, string oldPassword, string newPassword);
+        Task<ServiceResponseWithoutData> UpdateNote(Guid userId, UpdateNoteDto updatedNote);
+        Task<ServiceResponseWithoutData> DeleteNote(Guid userId, DeleteNoteRequestDto deleteNoteRequest);
+        Task<ServiceResponseWithoutData> EncryptNote(Guid userId, EncryptNoteRequestDto encryptNoteRequest);
+        Task<ServiceResponseWithoutData> DecryptNote(Guid userId, DecryptNoteRequestDto decryptNoteRequest);
+        Task<ServiceResponseWithoutData> MakeNotePublic(Guid userId, MakeNotePublicRequestDto makeNotePublicRequest);
+        Task<ServiceResponseWithoutData> ChangeNotePassword(Guid userId, ChangeNotePasswordRequestDto changeNotePasswordRequest);
     }
 }

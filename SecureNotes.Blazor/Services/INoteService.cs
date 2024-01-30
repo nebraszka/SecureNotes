@@ -8,14 +8,13 @@ namespace SecureNotes.Blazor.Services
     {
         Task<ServiceResponse<List<GetNoteDto>>> GetAllPublicNotes();
         Task<ServiceResponse<List<GetNoteDto>>> GetAllNotes();
-        Task<ServiceResponse<GetNoteDetailsDto>> GetNoteDetails(Guid noteId, string? password);
+        Task<ServiceResponse<GetNoteDetailsDto>> GetNoteDetails(GetNoteDetailsRequestDto getNoteDetailsRequest);
         Task<ServiceResponseWithoutData> CreateNote(AddNoteDto newNote);
-        Task<ServiceResponseWithoutData> UpdateNote(Guid noteId, UpdateNoteDto updatedNote);
-        Task<ServiceResponseWithoutData> DeleteNote(Guid noteId, string? password);
-        Task<ServiceResponseWithoutData> EncryptNote(Guid noteId, string password);
-        Task<ServiceResponseWithoutData> DecryptNote(Guid noteId, string password);
-        Task<ServiceResponseWithoutData> MakeNotePublic(Guid noteId, string? password);
-
-        Task<ServiceResponseWithoutData> ChangeNotePassword(Guid noteId, string oldPassword, string newPassword);
+        Task<ServiceResponseWithoutData> UpdateNote(UpdateNoteDto updatedNote);
+        Task<ServiceResponseWithoutData> DeleteNote(DeleteNoteRequestDto deleteNoteRequest);
+        Task<ServiceResponseWithoutData> EncryptNote(EncryptNoteRequestDto encryptNoteRequest);
+        Task<ServiceResponseWithoutData> DecryptNote(DecryptNoteRequestDto decryptNoteRequest);
+        Task<ServiceResponseWithoutData> MakeNotePublic(MakeNotePublicRequestDto makeNotePublicRequest);
+        Task<ServiceResponseWithoutData> ChangeNotePassword(ChangeNotePasswordRequestDto changeNotePasswordRequest);
     }
 }

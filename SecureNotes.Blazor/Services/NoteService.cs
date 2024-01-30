@@ -1,3 +1,4 @@
+using System.Text;
 using Newtonsoft.Json;
 using SecureNotes.API.Models.NoteDtos;
 using SecureNotes.Blazor.Models;
@@ -14,7 +15,7 @@ namespace SecureNotes.Blazor.Services
             _httpClient = httpClient;
         }
 
-        public Task<ServiceResponseWithoutData> ChangeNotePassword(Guid noteId, string oldPassword, string newPassword)
+        public Task<ServiceResponseWithoutData> ChangeNotePassword(ChangeNotePasswordRequestDto changeNotePasswordRequest)
         {
             throw new NotImplementedException();
         }
@@ -24,17 +25,18 @@ namespace SecureNotes.Blazor.Services
             throw new NotImplementedException();
         }
 
-        public Task<ServiceResponseWithoutData> DecryptNote(Guid noteId, string password)
+        public Task<ServiceResponseWithoutData> DecryptNote(DecryptNoteRequestDto decryptNoteRequest)
         {
             throw new NotImplementedException();
         }
 
-        public Task<ServiceResponseWithoutData> DeleteNote(Guid noteId, string? password)
+
+        public Task<ServiceResponseWithoutData> DeleteNote(DeleteNoteRequestDto deleteNoteRequest)
         {
             throw new NotImplementedException();
         }
 
-        public Task<ServiceResponseWithoutData> EncryptNote(Guid noteId, string password)
+        public Task<ServiceResponseWithoutData> EncryptNote(EncryptNoteRequestDto encryptNoteRequest)
         {
             throw new NotImplementedException();
         }
@@ -97,11 +99,12 @@ namespace SecureNotes.Blazor.Services
             }
         }
 
-        public async Task<ServiceResponse<GetNoteDetailsDto>> GetNoteDetails(Guid noteId, string? password)
+        public async Task<ServiceResponse<GetNoteDetailsDto>> GetNoteDetails(GetNoteDetailsRequestDto getNoteDetailsRequest)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{urlPostfix}/{noteId}{(password != null ? $"?password={password}" : "")}");
+                var itemJson = new StringContent(JsonConvert.SerializeObject(getNoteDetailsRequest), Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"{urlPostfix}/details", itemJson);
                 if (response.IsSuccessStatusCode)
                 {
                     var responseBody = await response.Content.ReadAsStringAsync();
@@ -126,12 +129,12 @@ namespace SecureNotes.Blazor.Services
             }
         }
 
-        public Task<ServiceResponseWithoutData> MakeNotePublic(Guid noteId, string? password)
+        public Task<ServiceResponseWithoutData> MakeNotePublic(MakeNotePublicRequestDto makeNotePublicRequest)
         {
             throw new NotImplementedException();
         }
 
-        public Task<ServiceResponseWithoutData> UpdateNote(Guid noteId, UpdateNoteDto updatedNote)
+        public Task<ServiceResponseWithoutData> UpdateNote(UpdateNoteDto updatedNote)
         {
             throw new NotImplementedException();
         }

@@ -20,19 +20,19 @@ namespace SecureNotes.API.Services
             _context = context;
         }
 
-        public async Task<ServiceResponseWithoutData> ChangeNotePassword(Guid userId, Guid noteId, string oldPassword, string newPassword)
+        public async Task<ServiceResponseWithoutData> ChangeNotePassword(Guid userId, ChangeNotePasswordRequestDto changeNotePasswordRequest)
         {
             if (await _context.Users.AnyAsync(u => u.UserId == userId))
             {
-                if (await _context.Notes.AnyAsync(n => n.Id == noteId))
+                if (await _context.Notes.AnyAsync(n => n.Id == changeNotePasswordRequest.NoteId))
                 {
-                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == changeNotePasswordRequest.NoteId);
 
                     if (note!.UserId == userId)
                     {
                         if (note.IsEncrypted)
                         {
-                            if (string.IsNullOrEmpty(oldPassword))
+                            if (string.IsNullOrEmpty(changeNotePasswordRequest.OldPassword))
                             {
                                 return new ServiceResponseWithoutData
                                 {
@@ -43,7 +43,7 @@ namespace SecureNotes.API.Services
 
                             using (var hmac = new HMACSHA512(note.PasswordSalt!))
                             {
-                                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(oldPassword!));
+                                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(changeNotePasswordRequest.OldPassword!));
 
                                 for (int i = 0; i < computedHash.Length; i++)
                                 {
@@ -59,7 +59,7 @@ namespace SecureNotes.API.Services
                             }
                         }
 
-                        if (string.IsNullOrEmpty(newPassword))
+                        if (string.IsNullOrEmpty(changeNotePasswordRequest.NewPassword))
                         {
                             return new ServiceResponseWithoutData
                             {
@@ -70,12 +70,12 @@ namespace SecureNotes.API.Services
 
                         using (var hmac = new HMACSHA512())
                         {
-                            byte[] key = AesEncryption.CreateAesKeyFromPassword(newPassword!, hmac.Key);
+                            byte[] key = AesEncryption.CreateAesKeyFromPassword(changeNotePasswordRequest.NewPassword!, hmac.Key);
                             note.Content = AesEncryption.Encrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
 
                             note.IsEncrypted = true;
                             note.PasswordSalt = hmac.Key;
-                            note.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(newPassword!));
+                            note.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(changeNotePasswordRequest.NewPassword!));
                         }
 
                         await _context.SaveChangesAsync();
@@ -93,14 +93,12 @@ namespace SecureNotes.API.Services
                         Message = "Nie masz uprawnień do zmiany hasła tej notatki"
                     };
                 }
-
                 return new ServiceResponseWithoutData
                 {
                     Success = false,
                     Message = "Nie znaleziono notatki"
                 };
             }
-
             return new ServiceResponseWithoutData
             {
                 Success = false,
@@ -176,13 +174,13 @@ namespace SecureNotes.API.Services
             };
         }
 
-        public async Task<ServiceResponseWithoutData> DecryptNote(Guid userId, Guid noteId, string password)
+        public async Task<ServiceResponseWithoutData> DecryptNote(Guid userId, DecryptNoteRequestDto decryptNoteRequestDto)
         {
             if (await _context.Users.AnyAsync(u => u.UserId == userId))
             {
-                if (await _context.Notes.AnyAsync(n => n.Id == noteId))
+                if (await _context.Notes.AnyAsync(n => n.Id == decryptNoteRequestDto.NoteId))
                 {
-                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == decryptNoteRequestDto.NoteId);
 
                     if (!note!.IsEncrypted)
                     {
@@ -195,7 +193,7 @@ namespace SecureNotes.API.Services
 
                     if (note!.UserId == userId)
                     {
-                        if (string.IsNullOrEmpty(password))
+                        if (string.IsNullOrEmpty(decryptNoteRequestDto.Password))
                         {
                             return new ServiceResponseWithoutData
                             {
@@ -206,7 +204,7 @@ namespace SecureNotes.API.Services
 
                         using (var hmac = new HMACSHA512(note.PasswordSalt!))
                         {
-                            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password!));
+                            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(decryptNoteRequestDto.Password!));
 
                             for (int i = 0; i < computedHash.Length; i++)
                             {
@@ -225,7 +223,7 @@ namespace SecureNotes.API.Services
                                 aes.IV = Convert.FromBase64String(note.Iv!);
                             }
 
-                            byte[] key = AesEncryption.CreateAesKeyFromPassword(password!, note.PasswordSalt!);
+                            byte[] key = AesEncryption.CreateAesKeyFromPassword(decryptNoteRequestDto.Password!, note.PasswordSalt!);
                             note.Content = AesEncryption.Decrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
 
                             note.IsEncrypted = false;
@@ -264,19 +262,19 @@ namespace SecureNotes.API.Services
         }
 
         // TESTED
-        public async Task<ServiceResponseWithoutData> DeleteNote(Guid userId, Guid noteId, string? password)
+        public async Task<ServiceResponseWithoutData> DeleteNote(Guid userId, DeleteNoteRequestDto deleteNoteRequestDto)
         {
             if (await _context.Users.AnyAsync(u => u.UserId == userId))
             {
-                if (await _context.Notes.AnyAsync(n => n.Id == noteId))
+                if (await _context.Notes.AnyAsync(n => n.Id == deleteNoteRequestDto.NoteId))
                 {
-                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == deleteNoteRequestDto.NoteId);
 
                     if (note!.UserId == userId)
                     {
                         if (note.IsEncrypted)
                         {
-                            if (string.IsNullOrEmpty(password))
+                            if (string.IsNullOrEmpty(deleteNoteRequestDto.Password))
                             {
                                 return new ServiceResponseWithoutData
                                 {
@@ -287,7 +285,7 @@ namespace SecureNotes.API.Services
 
                             using (var hmac = new HMACSHA512(note.PasswordSalt!))
                             {
-                                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password!));
+                                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(deleteNoteRequestDto.Password!));
 
                                 for (int i = 0; i < computedHash.Length; i++)
                                 {
@@ -334,13 +332,13 @@ namespace SecureNotes.API.Services
             };
         }
 
-        public async Task<ServiceResponseWithoutData> EncryptNote(Guid userId, Guid noteId, string password)
+        public async Task<ServiceResponseWithoutData> EncryptNote(Guid userId, EncryptNoteRequestDto encryptNoteRequestDto)
         {
             if (await _context.Users.AnyAsync(u => u.UserId == userId))
             {
-                if (await _context.Notes.AnyAsync(n => n.Id == noteId))
+                if (await _context.Notes.AnyAsync(n => n.Id == encryptNoteRequestDto.NoteId))
                 {
-                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == encryptNoteRequestDto.NoteId);
 
                     if (note!.IsEncrypted)
                     {
@@ -353,7 +351,7 @@ namespace SecureNotes.API.Services
 
                     if (note!.UserId == userId)
                     {
-                        if (string.IsNullOrEmpty(password))
+                        if (string.IsNullOrEmpty(encryptNoteRequestDto.Password))
                         {
                             return new ServiceResponseWithoutData
                             {
@@ -364,12 +362,12 @@ namespace SecureNotes.API.Services
 
                         using (var hmac = new HMACSHA512())
                         {
-                            byte[] key = AesEncryption.CreateAesKeyFromPassword(password!, hmac.Key);
+                            byte[] key = AesEncryption.CreateAesKeyFromPassword(encryptNoteRequestDto.Password!, hmac.Key);
                             note.Content = AesEncryption.Encrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
 
                             note.IsEncrypted = true;
                             note.PasswordSalt = hmac.Key;
-                            note.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password!));
+                            note.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(encryptNoteRequestDto.Password!));
                         }
 
                         await _context.SaveChangesAsync();
@@ -470,67 +468,75 @@ namespace SecureNotes.API.Services
         }
 
         // TESTED
-        public async Task<ServiceResponse<GetNoteDetailsDto>> GetNoteDetails(Guid userId, Guid noteId, string? password)
+        public async Task<ServiceResponse<GetNoteDetailsDto>> GetNoteDetails(Guid userId, GetNoteDetailsRequestDto getNoteDetailsRequestDto)
         {
             if (_context.Users.Any(u => u.UserId == userId))
             {
-                if (_context.Notes.Any(n => n.Id == noteId))
+                if (_context.Notes.Any(n => n.Id == getNoteDetailsRequestDto.NoteId))
                 {
-                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == getNoteDetailsRequestDto.NoteId);
 
-                    var noteDetails = new GetNoteDetailsDto
+                    if (note!.UserId == userId || note.IsPublic)
                     {
-                        Title = note!.Title,
-                        Content = note.Content,
-                        CreationDate = note.CreationDate,
-                        IsPublic = note.IsPublic,
-                        IsEncrypted = note.IsEncrypted
-                    };
-
-                    if (note!.IsEncrypted)
-                    {
-                        if (string.IsNullOrEmpty(password))
+                        var noteDetails = new GetNoteDetailsDto
                         {
-                            return new ServiceResponse<GetNoteDetailsDto>
-                            {
-                                Success = false,
-                                Message = "Hasło nie może być puste"
-                            };
-                        }
+                            Title = note.Title,
+                            Content = note.Content,
+                            CreationDate = note.CreationDate,
+                            IsPublic = note.IsPublic,
+                            IsEncrypted = note.IsEncrypted
+                        };
 
-                        using (var hmac = new HMACSHA512(note.PasswordSalt!))
+                        if (note!.IsEncrypted)
                         {
-                            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password!));
-
-                            for (int i = 0; i < computedHash.Length; i++)
+                            if (string.IsNullOrEmpty(getNoteDetailsRequestDto.Password))
                             {
-                                if (computedHash[i] != note.PasswordHash![i])
+                                return new ServiceResponse<GetNoteDetailsDto>
                                 {
-                                    return new ServiceResponse<GetNoteDetailsDto>
-                                    {
-                                        Success = false,
-                                        Message = "Niepoprawne hasło"
-                                    };
-                                }
+                                    Success = false,
+                                    Message = "Hasło nie może być puste"
+                                };
                             }
 
-                            using (var aes = Aes.Create())
+                            using (var hmac = new HMACSHA512(note.PasswordSalt!))
                             {
-                                aes.IV = Convert.FromBase64String(note.Iv!);
-                            }
+                                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(getNoteDetailsRequestDto.Password!));
 
-                            byte[] key = AesEncryption.CreateAesKeyFromPassword(password!, note.PasswordSalt!);
-                            noteDetails.Content = AesEncryption.Decrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
+                                for (int i = 0; i < computedHash.Length; i++)
+                                {
+                                    if (computedHash[i] != note.PasswordHash![i])
+                                    {
+                                        return new ServiceResponse<GetNoteDetailsDto>
+                                        {
+                                            Success = false,
+                                            Message = "Niepoprawne hasło"
+                                        };
+                                    }
+                                }
+
+                                using (var aes = Aes.Create())
+                                {
+                                    aes.IV = Convert.FromBase64String(note.Iv!);
+                                }
+
+                                byte[] key = AesEncryption.CreateAesKeyFromPassword(getNoteDetailsRequestDto.Password!, note.PasswordSalt!);
+                                noteDetails.Content = AesEncryption.Decrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
+                            }
                         }
+
+                        return new ServiceResponse<GetNoteDetailsDto>
+                        {
+                            Success = true,
+                            Data = noteDetails
+                        };
                     }
 
                     return new ServiceResponse<GetNoteDetailsDto>
                     {
-                        Success = true,
-                        Data = noteDetails
+                        Success = false,
+                        Message = "Nie masz uprawnień do wyświetlenia tej notatki"
                     };
                 }
-
                 return new ServiceResponse<GetNoteDetailsDto>
                 {
                     Success = false,
@@ -545,19 +551,19 @@ namespace SecureNotes.API.Services
             };
         }
 
-        public async Task<ServiceResponseWithoutData> MakeNotePublic(Guid userId, Guid noteId, string? password)
+        public async Task<ServiceResponseWithoutData> MakeNotePublic(Guid userId, MakeNotePublicRequestDto makeNotePublicRequestDto)
         {
             if (await _context.Users.AnyAsync(u => u.UserId == userId))
             {
-                if (await _context.Notes.AnyAsync(n => n.Id == noteId))
+                if (await _context.Notes.AnyAsync(n => n.Id == makeNotePublicRequestDto.NoteId))
                 {
-                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == makeNotePublicRequestDto.NoteId);
 
                     if (note!.UserId == userId)
                     {
                         if (note.IsEncrypted)
                         {
-                            if (string.IsNullOrEmpty(password))
+                            if (string.IsNullOrEmpty(makeNotePublicRequestDto.Password))
                             {
                                 return new ServiceResponseWithoutData
                                 {
@@ -568,7 +574,7 @@ namespace SecureNotes.API.Services
 
                             using (var hmac = new HMACSHA512(note.PasswordSalt!))
                             {
-                                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password!));
+                                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(makeNotePublicRequestDto.Password!));
 
                                 for (int i = 0; i < computedHash.Length; i++)
                                 {
@@ -617,13 +623,13 @@ namespace SecureNotes.API.Services
         }
 
         // Only title and content can be updated here
-        public async Task<ServiceResponseWithoutData> UpdateNote(Guid userId, Guid noteId, UpdateNoteDto updatedNote)
+        public async Task<ServiceResponseWithoutData> UpdateNote(Guid userId, UpdateNoteDto updatedNote)
         {
             if (await _context.Users.AnyAsync(u => u.UserId == userId))
             {
-                if (await _context.Notes.AnyAsync(n => n.Id == noteId))
+                if (await _context.Notes.AnyAsync(n => n.Id == updatedNote.NoteId))
                 {
-                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == noteId);
+                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == updatedNote.NoteId);
 
                     if (note!.UserId == userId)
                     {

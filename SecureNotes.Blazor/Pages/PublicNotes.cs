@@ -9,7 +9,6 @@ namespace SecureNotes.Blazor.Pages
         [Inject]
         private INoteService? noteService { get; set; }
         public List<GetNoteDto>? notes { get; set; }
-        public AddNoteDto newNote = new AddNoteDto();
         public string notesListMessage = "";
         public string notesListClass = "";
         public string addNoteStatusMessage = "";

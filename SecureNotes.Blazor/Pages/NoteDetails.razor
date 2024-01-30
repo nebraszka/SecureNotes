@@ -4,6 +4,7 @@
 @page "/note-content/{noteId:guid}"
 @inject INoteService noteService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 @attribute [Authorize]
 
@@ -12,58 +13,72 @@
 @if (IsEncrypted)
 {
     <p>Notatka jest zaszyfrowana. Wprowadź hasło, aby ją odszyfrować.</p>
-    <EditForm Model="@this" OnValidSubmit="DecryptNote">
+    <EditForm Model="@request" OnValidSubmit="DecryptNote">
         <div class="form-group">
             <label for="password">Hasło</label>
-            <InputText id="password" class="form-control" @bind-Value="password" type="password" />
+            <InputText id="password" class="form-control" @bind-Value="request.Password" />
         </div>
-        <button type="submit" class="btn btn-primary">Odszyfruj</button>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Odszyfruj</button>
+            <a class="btn btn-warning ml-2" href="my-notes">Powrót</a>
+        </div>
     </EditForm>
 }
 else if (!loading && noteDetails != null)
 {
+    <div class="note-details">
     <h4>@noteDetails.Title</h4>
-    <p>@noteDetails.Content</p>
-    <p><em>Utworzono: @noteDetails.CreationDate.ToShortDateString()</em></p>
-    <p>Publiczna: @noteDetails.IsPublic</p>
-    <p>Zaszyfrowana: @noteDetails.IsEncrypted</p>
+    <div class="note-content">
+        <p>@noteDetails.Content</p>
+    </div>
+    <div class="note-metadata">
+        <p><em>Utworzono: @noteDetails.CreationDate.ToShortDateString()</em></p>
+        <p>Publiczna: @(noteDetails.IsPublic ? "tak" : "nie")</p>
+        <p>Zaszyfrowana: @(noteDetails.IsEncrypted ? "tak" : "nie")</p>
+    </div>
+</div>
+    <button class="btn btn-warning" onclick="history.back();">Powrót</button>
 }
 else
 {
-    <p>Notatka nie została znaleziona. @password</p>
+    <p>@message</p>
 }
 
+<style>
+    .note-details {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
 
-<a class="btn btn-warning" href="my-notes">Powrót</a>
+    .note-content {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    .note-metadata p {
+        margin: 5px 0;
+    }
+</style>
 
 @code {
     [Parameter]
     public Guid noteId { get; set; }
     public bool IsEncrypted { get; set; }
 
+    private string returnUrl = "my-notes";
+
+    private GetNoteDetailsRequestDto request = new GetNoteDetailsRequestDto();
     private GetNoteDetailsDto? noteDetails = null!;
-    private string? password;
+
     private bool loading = true;
 
-    private async Task DecryptNote()
-    {
-        if (string.IsNullOrEmpty(password))
-        {
-            return;
-        }
-
-        IsEncrypted = false;
-        await LoadNoteDetails();
-    }
+    private string message = "";
 
     protected override async Task OnInitializedAsync()
     {
-        var uri = new Uri(NavigationManager.Uri);
-        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("isEncrypted", out var
-        isEncryptedValue))
-        {
-            IsEncrypted = bool.Parse(isEncryptedValue);
-        }
+        IsEncrypted = new Uri(NavigationManager.Uri).Query.Contains("isEncrypted=True");
 
         if (!IsEncrypted)
         {
@@ -71,11 +86,18 @@ else
         }
     }
 
+    private async Task DecryptNote()
+    {
+        IsEncrypted = false;
+        await LoadNoteDetails();
+    }
+
     private async Task LoadNoteDetails()
     {
         try
         {
-            var response = await noteService.GetNoteDetails(noteId, password);
+            request.NoteId = noteId;
+            var response = await noteService.GetNoteDetails(request);
             if (response.Success)
             {
                 noteDetails = response.Data!;
@@ -83,12 +105,24 @@ else
             }
             else
             {
-                // Obsługa błędu (np. złe hasło)
+                if (response != null)
+                {
+                    message = response.Message!;
+                }
+                else
+                {
+                    message = "Wystąpił nieznany błąd.";
+                }
             }
         }
         catch
         {
-            // Obsługa wyjątków
+            message = "Wystąpił nieznany błąd.";
         }
+    }
+
+    private async Task GoBack()
+    {
+        await JSRuntime.InvokeVoidAsync("history.back");
     }
 }
