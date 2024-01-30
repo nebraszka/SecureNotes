@@ -428,7 +428,7 @@ namespace SecureNotes.API.Services
 
                 return new ServiceResponse<List<GetNoteDto>>
                 {
-                    Success = false,
+                    Success = true,
                     Message = "Brak notatek dla tego użytkownika"
                 };
             }

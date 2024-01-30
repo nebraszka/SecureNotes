@@ -22,19 +22,11 @@ namespace SecureNotes.Blazor.Authentication
             var token = await localStorageService.GetItemAsync<string>("token");
             var identity = new ClaimsIdentity();
             _httpClient.DefaultRequestHeaders.Authorization = null;
-            _httpClient.DefaultRequestHeaders.Remove("userId");
 
             if (!string.IsNullOrEmpty(token))
             {
                 identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-
-                var claims = ParseClaimsFromJwt(token);
-                var userIdClaim = claims.FirstOrDefault(c => c.Type == "nameid");
-                if (userIdClaim != null)
-                {
-                    _httpClient.DefaultRequestHeaders.Add("userId", userIdClaim.Value);
-                }
             }
 
             var user = new ClaimsPrincipal(identity);

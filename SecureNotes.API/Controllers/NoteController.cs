@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SecureNotes.API.Models;
@@ -26,72 +27,90 @@ namespace SecureNotes.API.Controllers
         }
 
         [HttpGet("all"), Authorize]
-        public async Task<ActionResult<ServiceResponse<List<GetNoteDto>>>> GetAllNotes([FromHeader] Guid userId)
+        public async Task<ActionResult<ServiceResponse<List<GetNoteDto>>>> GetAllNotes()
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+
             var response = await _noteService.GetAllNotes(userId);
 
             return Ok(response);
         }
 
         [HttpGet("{noteId}"), Authorize]
-        public async Task<ActionResult<ServiceResponse<GetNoteDetailsDto>>> GetNoteDetails([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string? password)
+        public async Task<ActionResult<ServiceResponse<GetNoteDetailsDto>>> GetNoteDetails([FromRoute] Guid noteId, [FromQuery] string? password)
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+
             var response = await _noteService.GetNoteDetails(userId, noteId, password);
 
             return Ok(response);
         }
 
         [HttpPost, Authorize]
-        public async Task<ActionResult<ServiceResponseWithoutData>> CreateNote([FromHeader] Guid userId, [FromBody] AddNoteDto newNote)
+        public async Task<ActionResult<ServiceResponseWithoutData>> CreateNote([FromBody] AddNoteDto newNote)
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+
             var response = await _noteService.CreateNote(userId, newNote);
 
             return Ok(response);
         }
 
         [HttpDelete("{noteId}"), Authorize]
-        public async Task<ActionResult<ServiceResponseWithoutData>> DeleteNote([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string? password)
+        public async Task<ActionResult<ServiceResponseWithoutData>> DeleteNote([FromRoute] Guid noteId, [FromQuery] string? password)
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+
             var response = await _noteService.DeleteNote(userId, noteId, password);
 
             return Ok(response);
         }
 
         [HttpPost("{noteId}/encrypt"), Authorize]
-        public async Task<ActionResult<ServiceResponseWithoutData>> EncryptNote([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string password)
+        public async Task<ActionResult<ServiceResponseWithoutData>> EncryptNote([FromRoute] Guid noteId, [FromQuery] string password)
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+
             var response = await _noteService.EncryptNote(userId, noteId, password);
 
             return Ok(response);
         }
 
         [HttpPost("{noteId}/decrypt"), Authorize]
-        public async Task<ActionResult<ServiceResponseWithoutData>> DecryptNote([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string password)
+        public async Task<ActionResult<ServiceResponseWithoutData>> DecryptNote([FromRoute] Guid noteId, [FromQuery] string password)
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+
             var response = await _noteService.DecryptNote(userId, noteId, password);
 
             return Ok(response);
         }
 
         [HttpPost("{noteId}/make-public"), Authorize]
-        public async Task<ActionResult<ServiceResponseWithoutData>> MakeNotePublic([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string? password)
+        public async Task<ActionResult<ServiceResponseWithoutData>> MakeNotePublic([FromRoute] Guid noteId, [FromQuery] string? password)
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+
             var response = await _noteService.MakeNotePublic(userId, noteId, password);
 
             return Ok(response);
         }
 
         [HttpPut("{noteId}"), Authorize]
-        public async Task<ActionResult<ServiceResponseWithoutData>> UpdateNote([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromBody] UpdateNoteDto updatedNote)
+        public async Task<ActionResult<ServiceResponseWithoutData>> UpdateNote([FromRoute] Guid noteId, [FromBody] UpdateNoteDto updatedNote)
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+
             var response = await _noteService.UpdateNote(userId, noteId, updatedNote);
 
             return Ok(response);
         }
 
         [HttpPost("{noteId}/change-password"), Authorize]
-        public async Task<ActionResult<ServiceResponseWithoutData>> ChangeNotePassword([FromHeader] Guid userId, [FromRoute] Guid noteId, [FromQuery] string oldPassword, [FromQuery] string newPassword)
+        public async Task<ActionResult<ServiceResponseWithoutData>> ChangeNotePassword([FromRoute] Guid noteId, [FromQuery] string oldPassword, [FromQuery] string newPassword)
         {
+            var userId = Guid.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? string.Empty);
+            
             var response = await _noteService.ChangeNotePassword(userId, noteId, oldPassword, newPassword);
 
             return Ok(response);

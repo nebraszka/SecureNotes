@@ -22,7 +22,7 @@ namespace SecureNotes.Blazor.Pages
             {
                 if (response.Success)
                 {
-                    notes = response.Data;
+                    notes = response.Data ?? new List<GetNoteDto>();
                 }
                 else
                 {
