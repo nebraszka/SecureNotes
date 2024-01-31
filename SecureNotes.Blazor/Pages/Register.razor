@@ -8,22 +8,22 @@
     <DataAnnotationsValidator />
 
     <div class="form-group">
-        <label for="username">Nazwa użytkownika:</label>
+        <label for="username">Nazwa użytkownika</label>
         <InputText id="username" class="form-control" @bind-Value="registerUserDto.Username" />
         <ValidationMessage For="@(() => registerUserDto.Username)" />
     </div>
 
     <div class="form-group">
-        <label for="email">Email:</label>
+        <label for="email">Email</label>
         <InputText id="email" class="form-control" type="email" @bind-Value="registerUserDto.Email" />
         <ValidationMessage For="@(() => registerUserDto.Email)" />
     </div>
 
     <div class="form-group">
-        <label for="password">Hasło:</label>
+        <label for="password">Hasło</label>
         <div class="input-group">
             <InputText id="password" class="form-control" type="@passwordFieldType"
-                @bind-Value="registerUserDto.Password" />
+                @bind-Value="registerUserDto.Password" @oninput="UpdatePassword"/>
             <div class="input-group-append">
                 <button class="btn btn-outline-secondary" type="button" @onclick="TogglePasswordVisibility">
                     @if (passwordVisible)
@@ -45,7 +45,15 @@
     <button class="btn submit-button" type="submit">Zarejestruj się</button>
 </EditForm>
 
-@if (registrationResult != null)
+@if (!string.IsNullOrEmpty(registrationResult))
 {
     <div style="color: red;">@registrationResult</div>
+}
+
+
+@if (isQRCodeVisible)
+{
+    <hr />
+    <p>Zeskanuj kod QR, aby móc logować się przy użyciu TOTP</p>
+    <div id="qrcode"></div>
 }

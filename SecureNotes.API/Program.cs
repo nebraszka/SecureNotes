@@ -62,12 +62,6 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
-// builder.Services.AddHttpsRedirection(options =>
-// {
-//     options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
-//     options.HttpsPort = 5001;
-// });
-
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

@@ -6,6 +6,8 @@ namespace SecureNotes.Blazor.Models.UserDtos
     {
         [Required(ErrorMessage = "Proszę wprowadzić nazwę użytkownika.")]
         [MinLength(4, ErrorMessage = "Nazwa użytkownika musi być dłuższa niż 3 znaki.")]
+        [MaxLength(20, ErrorMessage = "Nazwa użytkownika musi być krótsza niż 21 znaków.")]
+        [RegularExpression(@"^[a-zA-Z0-9]+$", ErrorMessage = "Nazwa użytkownika może zawierać tylko litery i cyfry.")]
         public string Username { get; set; }
 
         [Required(ErrorMessage = "Proszę podać adres e-mail.")]

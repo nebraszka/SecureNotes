@@ -26,7 +26,18 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+
     <script src="_framework/blazor.webassembly.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+    <script type="text/javascript">
+        function generateQRCode(secret) {
+            new QRCode(document.getElementById("qrcode"), {
+                text: "otpauth://totp/TwojaAplikacja?secret=" + secret,
+                width: 128,
+                height: 128
+            });
+        }
+    </script>
 </body>
 
 </html>

@@ -138,7 +138,6 @@ namespace SecureNotes.API.Services
             };
         }
 
-        // TODO Consider computing entropy of password
         public async Task<ServiceResponse<RegisteredUserDto>> Register(RegisterUserDto registerUserDto)
         {
             // Check if user exists
@@ -225,7 +224,7 @@ namespace SecureNotes.API.Services
 
             if (failedLoginAttemptsCount > 0)
             {
-                int delay = Math.Min(30000, 1000 * (int)Math.Pow(2, failedLoginAttemptsCount - 1));
+                int delay = Math.Min(30000, 200 * (int)Math.Pow(2, failedLoginAttemptsCount - 1));
                 await Task.Delay(delay);
             }
         }

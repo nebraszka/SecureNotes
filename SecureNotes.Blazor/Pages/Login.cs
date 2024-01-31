@@ -24,11 +24,20 @@ public partial class Login : ComponentBase
 
     protected string Message = string.Empty;
     public LoginUserDto user = new LoginUserDto();
+    
+    private bool passwordVisible = false;
+    private string passwordFieldType = "password";
+
+    private void TogglePasswordVisibility()
+    {
+        passwordVisible = !passwordVisible;
+        passwordFieldType = passwordVisible ? "text" : "password";
+    }
 
     protected async Task HandleLogin()
     {
         // TODO make it better
-        if(user.Username.Contains("@"))
+        if (user.Username.Contains("@"))
         {
             user.Email = user.Username;
             user.Username = string.Empty;
@@ -36,7 +45,7 @@ public partial class Login : ComponentBase
 
         var response = await authService!.Login(user);
         if (response.Success)
-        {   
+        {
             var token = response.Data;
             await ((CustomAuthStateProvider)authenticationStateProvider!).MarkUserAsAuthenticated(token!);
             navigationManager!.NavigateTo("/");
@@ -44,7 +53,7 @@ public partial class Login : ComponentBase
         else
         {
             Message = response?.Message ?? "Błąd logowania";
-        
+
         }
     }
 }
