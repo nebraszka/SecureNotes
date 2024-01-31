@@ -23,11 +23,8 @@ namespace SecureNotes.Blazor.Services
                 var response = await _httpClient.PostAsync($"{urlPostfix}/change-password", itemJson);
                 if (response.IsSuccessStatusCode)
                 {
-                    return new ServiceResponseWithoutData
-                    {
-                        Success = true,
-                        Message = "Hasło notatki zmienione"
-                    };
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ServiceResponseWithoutData>(responseBody)!;
                 }
                 else
                 {
@@ -56,11 +53,8 @@ namespace SecureNotes.Blazor.Services
                 var response = await _httpClient.PostAsync($"{urlPostfix}/create", itemJson);
                 if (response.IsSuccessStatusCode)
                 {
-                    return new ServiceResponseWithoutData
-                    {
-                        Success = true,
-                        Message = "Notatka utworzona"
-                    };
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ServiceResponseWithoutData>(responseBody)!;
                 }
                 else
                 {
@@ -89,11 +83,8 @@ namespace SecureNotes.Blazor.Services
                 var response = await _httpClient.PostAsync($"{urlPostfix}/decrypt", itemJson);
                 if (response.IsSuccessStatusCode)
                 {
-                    return new ServiceResponseWithoutData
-                    {
-                        Success = true,
-                        Message = "Notatka odszyfrowana"
-                    };
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ServiceResponseWithoutData>(responseBody)!;
                 }
                 else
                 {
@@ -123,11 +114,8 @@ namespace SecureNotes.Blazor.Services
                 var response = await _httpClient.PostAsync($"{urlPostfix}/delete", itemJson);
                 if (response.IsSuccessStatusCode)
                 {
-                    return new ServiceResponseWithoutData
-                    {
-                        Success = true,
-                        Message = "Notatka usunięta"
-                    };
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ServiceResponseWithoutData>(responseBody)!;
                 }
                 else
                 {
@@ -266,6 +254,36 @@ namespace SecureNotes.Blazor.Services
             }
         }
 
+        public async Task<ServiceResponseWithoutData> MakeNotePrivate(MakeNotePrivateRequestDto makeNotePrivateRequest)
+        {
+            try
+            {
+                var itemJson = new StringContent(JsonConvert.SerializeObject(makeNotePrivateRequest), Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync($"{urlPostfix}/make-private", itemJson);
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ServiceResponseWithoutData>(responseBody)!;
+                }
+                else
+                {
+                    return new ServiceResponseWithoutData
+                    {
+                        Success = false,
+                        Message = "Błąd prywatyzacji notatki"
+                    };
+                }
+            }
+            catch (Exception)
+            {
+                return new ServiceResponseWithoutData
+                {
+                    Success = false,
+                    Message = "Błąd prywatyzacji notatki"
+                };
+            }
+        }
+
         public async Task<ServiceResponseWithoutData> MakeNotePublic(MakeNotePublicRequestDto makeNotePublicRequest)
         {
             try
@@ -274,11 +292,8 @@ namespace SecureNotes.Blazor.Services
                 var response = await _httpClient.PostAsync($"{urlPostfix}/make-public", itemJson);
                 if (response.IsSuccessStatusCode)
                 {
-                    return new ServiceResponseWithoutData
-                    {
-                        Success = true,
-                        Message = "Notatka udostępniona"
-                    };
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ServiceResponseWithoutData>(responseBody)!;
                 }
                 else
                 {
@@ -307,11 +322,8 @@ namespace SecureNotes.Blazor.Services
                 var response = await _httpClient.PutAsync($"{urlPostfix}", itemJson);
                 if (response.IsSuccessStatusCode)
                 {
-                    return new ServiceResponseWithoutData
-                    {
-                        Success = true,
-                        Message = "Notatka zaktualizowana"
-                    };
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ServiceResponseWithoutData>(responseBody)!;
                 }
                 else
                 {

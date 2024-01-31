@@ -23,9 +23,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", builder =>
     {
-        builder.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        builder.WithOrigins("https://localhost", "https://localhost:8443")
+               .AllowAnyMethod()
+               .AllowAnyHeader()
+               .AllowCredentials();
     });
 });
 
@@ -33,7 +34,7 @@ var jwtSettings = new JwtSettings();
 builder.Configuration.Bind(nameof(JwtSettings), jwtSettings);
 builder.Services.AddSingleton(jwtSettings);
 
-builder.Services.AddAuthentication().AddJwtBearer( jwt =>
+builder.Services.AddAuthentication().AddJwtBearer(jwt =>
 {
     jwt.TokenValidationParameters = new TokenValidationParameters
     {

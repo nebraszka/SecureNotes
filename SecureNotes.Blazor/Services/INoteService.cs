@@ -15,6 +15,7 @@ namespace SecureNotes.Blazor.Services
         Task<ServiceResponseWithoutData> EncryptNote(EncryptNoteRequestDto encryptNoteRequest);
         Task<ServiceResponseWithoutData> DecryptNote(DecryptNoteRequestDto decryptNoteRequest);
         Task<ServiceResponseWithoutData> MakeNotePublic(MakeNotePublicRequestDto makeNotePublicRequest);
+        Task<ServiceResponseWithoutData> MakeNotePrivate(MakeNotePrivateRequestDto makeNotePrivateRequest);
         Task<ServiceResponseWithoutData> ChangeNotePassword(ChangeNotePasswordRequestDto changeNotePasswordRequest);
     }
 }

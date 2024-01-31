@@ -588,6 +588,58 @@ namespace SecureNotes.API.Services
             };
         }
 
+        public async Task<ServiceResponseWithoutData> MakeNotePrivate(Guid userId, MakeNotePrivateRequestDto makeNotePrivateRequest)
+        {
+            try
+            {
+                if (await _context.Users.AnyAsync(u => u.UserId == userId))
+                {
+                    if (await _context.Notes.AnyAsync(n => n.Id == makeNotePrivateRequest.NoteId))
+                    {
+                        var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == makeNotePrivateRequest.NoteId);
+
+                        if (note!.UserId == userId)
+                        {
+                            note.IsPublic = false;
+
+                            await _context.SaveChangesAsync();
+
+                            return new ServiceResponseWithoutData
+                            {
+                                Success = true,
+                                Message = "Notatka została ustawiona jako prywatna"
+                            };
+                        }
+
+                        return new ServiceResponseWithoutData
+                        {
+                            Success = false,
+                            Message = "Nie masz uprawnień do ustawienia tej notatki jako prywatnej"
+                        };
+                    }
+
+                    return new ServiceResponseWithoutData
+                    {
+                        Success = false,
+                        Message = "Nie znaleziono notatki"
+                    };
+                }
+                return new ServiceResponseWithoutData
+                {
+                    Success = false,
+                    Message = "Nie znaleziono użytkownika"
+                };
+            }
+            catch (Exception)
+            {
+                return new ServiceResponseWithoutData
+                {
+                    Success = false,
+                    Message = "Wystąpił błąd po stronie serwera"
+                };
+            }
+        }
+
         public async Task<ServiceResponseWithoutData> MakeNotePublic(Guid userId, MakeNotePublicRequestDto makeNotePublicRequestDto)
         {
             if (await _context.Users.AnyAsync(u => u.UserId == userId))

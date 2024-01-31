@@ -84,6 +84,14 @@ namespace SecureNotes.API.Controllers
             return Ok(response);
         }
 
+        [HttpPost("make-private"), Authorize]
+        public async Task<ActionResult<ServiceResponseWithoutData>> MakeNotePrivate([FromBody] MakeNotePrivateRequestDto makeNotePrivateRequest)
+        {
+            var response = await _noteService.MakeNotePrivate(userId, makeNotePrivateRequest);
+
+            return Ok(response);
+        }
+
         [HttpPut, Authorize]
         public async Task<ActionResult<ServiceResponseWithoutData>> UpdateNote([FromBody] UpdateNoteDto updatedNote)
         {

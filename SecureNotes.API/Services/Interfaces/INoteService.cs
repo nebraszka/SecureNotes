@@ -1,6 +1,5 @@
 using SecureNotes.API.Models;
 using SecureNotes.API.Models.NoteDtos;
-using SecureNotes.Shared.Models;
 
 namespace SecureNotes.API.Services.Interfaces
 {
@@ -15,6 +14,7 @@ namespace SecureNotes.API.Services.Interfaces
         Task<ServiceResponseWithoutData> EncryptNote(Guid userId, EncryptNoteRequestDto encryptNoteRequest);
         Task<ServiceResponseWithoutData> DecryptNote(Guid userId, DecryptNoteRequestDto decryptNoteRequest);
         Task<ServiceResponseWithoutData> MakeNotePublic(Guid userId, MakeNotePublicRequestDto makeNotePublicRequest);
+        Task<ServiceResponseWithoutData> MakeNotePrivate(Guid userId, MakeNotePrivateRequestDto makeNotePrivateRequest);
         Task<ServiceResponseWithoutData> ChangeNotePassword(Guid userId, ChangeNotePasswordRequestDto changeNotePasswordRequest);
     }
 }
