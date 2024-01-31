@@ -1,5 +1,7 @@
 @using SecureNotes.API.Models.NoteDtos
 @using SecureNotes.Blazor.Services
+@using Ganss.Xss
+@using Markdig
 
 @page "/edit-note/{noteId:guid}"
 
@@ -53,7 +55,7 @@ else if (!loading && noteDetails != null)
         <button class="btn btn-info" @onclick="ShowEncryptDialog">Zaszyfruj notatkę</button>
     }
 
-    @if(noteDetails.IsPublic)
+    @if (noteDetails.IsPublic)
     {
         <button class="btn btn-info" @onclick="MakeNotePrivate">Zmień na prywatną</button>
     }
@@ -123,6 +125,12 @@ else if (!loading && noteDetails != null)
 <p>@message</p>
 <button class="btn btn-secondary" @onclick="GoBack">Powrót</button>
 
+<hr />
+<h4>Podgląd</h4>
+<div class="markdown-content">
+    @((MarkupString)Markdown.ToHtml(sanitizer.Sanitize(updateNoteDto.Content)))
+</div>
+
 @code {
     [Parameter]
     public Guid noteId { get; set; }
@@ -140,6 +148,8 @@ else if (!loading && noteDetails != null)
 
     private bool showEncryptDialog = false;
     private string encryptionPassword = string.Empty;
+
+    private HtmlSanitizer sanitizer = new HtmlSanitizer();
 
     protected override async Task OnInitializedAsync()
     {

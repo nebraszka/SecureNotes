@@ -1,6 +1,7 @@
 @using SecureNotes.Blazor.Services
 @using SecureNotes.API.Models.NoteDtos
 @using Markdig
+@using Ganss.Xss
 
 @page "/note-content/{noteId:guid}"
 @inject INoteService noteService
@@ -30,7 +31,7 @@ else if (!loading && noteDetails != null)
     <div class="note-details">
     <h4>@noteDetails.Title</h4>
     <div class="note-content">
-        @((MarkupString)Markdown.ToHtml(noteDetails.Content ?? ""))
+        @((MarkupString)Markdown.ToHtml(sanitizer.Sanitize(noteDetails.Content)))
     </div>
     <div class="note-metadata">
         <p><em>Utworzono: @noteDetails.CreationDate.ToShortDateString()</em></p>
@@ -76,6 +77,8 @@ else
     private bool loading = true;
 
     private string message = "";
+
+    private HtmlSanitizer sanitizer = new HtmlSanitizer();
 
     protected override async Task OnInitializedAsync()
     {
