@@ -28,9 +28,11 @@
 else if (!loading && noteDetails != null)
 {
     <EditForm Model="@updateNoteDto" OnValidSubmit="HandleUpdateNote">
+    <DataAnnotationsValidator />
     <div class="form-group">
         <label for="title">Tytuł</label>
         <InputText id="title" class="form-control" @bind-Value="updateNoteDto.Title" />
+        <ValidationMessage For="@(() => updateNoteDto.Title)" />
     </div>
     <div class="form-group">
         <label for="content">Treść (Markdown)</label>
@@ -77,11 +79,41 @@ else if (!loading && noteDetails != null)
             <div class="modal-body">
                 <div class="form-group">
                     <label for="oldPassword">Stare Hasło</label>
-                    <InputText id="oldPassword" class="form-control" @bind-Value="oldPassword" />
+                    <div class="input-group">
+                        <InputText id="oldPassword" class="form-control" @bind-Value="oldPassword" type="@oldPasswordFieldType" />
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button"
+                                @onclick="ToggleOldPasswordVisibility">
+                                @if (oldPasswordVisible)
+                                    {
+                                        <i class="oi oi-eye-closed"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="oi oi-eye"></i>
+                                    }
+                                </button>
+                            </div>
+                        </div>
                 </div>
                 <div class="form-group">
                     <label for="newPassword">Nowe Hasło</label>
-                    <InputText id="newPassword" class="form-control" @bind-Value="newPassword" />
+                    <div class="input-group">
+                        <InputText id="newPassword" class="form-control" type="@newPasswordFieldType" @bind-Value="newPassword" />
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button"
+                                @onclick="ToggleNewPasswordVisibility">
+                                @if (newPasswordVisible)
+                                    {
+                                        <i class="oi oi-eye-closed"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="oi oi-eye"></i>
+                                    }
+                                </button>
+                            </div>
+                        </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -108,22 +140,37 @@ else if (!loading && noteDetails != null)
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="encryptionPassword">Podaj Hasło do Szyfrowania</label>
-                        <InputText id="encryptionPassword" class="form-control" @bind-Value="encryptionPassword" />
+                        <div class="input-group">
+                            <InputText id="encryptionPassword" class="form-control" @bind-Value="encryptionPassword" type="@passwordFieldType" />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button"
+                                    @onclick="TogglePasswordVisibility">
+                                    @if (passwordVisible)
+                                        {
+                                            <i class="oi oi-eye-closed"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="oi oi-eye"></i>
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary"
-                        @onclick="() => showEncryptDialog = false">Anuluj</button>
-                    <button type="submit" class="btn btn-primary">Zaszyfruj</button>
-                </div>
-            </EditForm>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                            @onclick="() => showEncryptDialog = false">Anuluj</button>
+                        <button type="submit" class="btn btn-primary">Zaszyfruj</button>
+                    </div>
+                </EditForm>
+            </div>
         </div>
     </div>
-</div>
 }
 
 <p>@message</p>
-<button class="btn btn-secondary" @onclick="GoBack">Powrót</button>
+<button class="btn btn-warning" @onclick="GoBack">Powrót</button>
 
 <hr />
 <h4>Podgląd</h4>
@@ -142,6 +189,14 @@ else if (!loading && noteDetails != null)
     private bool loading = true;
     private string message = "";
 
+    private bool passwordVisible = false;
+    private string passwordFieldType = "password";
+
+    private bool oldPasswordVisible = false;
+    private string oldPasswordFieldType = "password";
+    private bool newPasswordVisible = false;
+    private string newPasswordFieldType = "password";
+
     private bool showChangePasswordDialog = false;
     private string oldPassword = string.Empty;
     private string newPassword = string.Empty;
@@ -159,6 +214,24 @@ else if (!loading && noteDetails != null)
         {
             await LoadNoteDetails();
         }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        passwordVisible = !passwordVisible;
+        passwordFieldType = passwordVisible ? "text" : "password";
+    }
+
+    private void ToggleOldPasswordVisibility()
+    {
+        oldPasswordVisible = !oldPasswordVisible;
+        oldPasswordFieldType = oldPasswordVisible ? "text" : "password";
+    }
+
+    private void ToggleNewPasswordVisibility()
+    {
+        newPasswordVisible = !newPasswordVisible;
+        newPasswordFieldType = newPasswordVisible ? "text" : "password";
     }
 
     private void ShowChangePasswordDialog()
