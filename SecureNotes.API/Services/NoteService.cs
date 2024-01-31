@@ -334,70 +334,96 @@ namespace SecureNotes.API.Services
 
         public async Task<ServiceResponseWithoutData> EncryptNote(Guid userId, EncryptNoteRequestDto encryptNoteRequestDto)
         {
-            if (await _context.Users.AnyAsync(u => u.UserId == userId))
+            try
             {
-                if (await _context.Notes.AnyAsync(n => n.Id == encryptNoteRequestDto.NoteId))
+                if (await _context.Users.AnyAsync(u => u.UserId == userId))
                 {
-                    var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == encryptNoteRequestDto.NoteId);
-
-                    if (note!.IsEncrypted)
+                    if (await _context.Notes.AnyAsync(n => n.Id == encryptNoteRequestDto.NoteId))
                     {
-                        return new ServiceResponseWithoutData
-                        {
-                            Success = false,
-                            Message = "Notatka jest już zaszyfrowana"
-                        };
-                    }
+                        var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == encryptNoteRequestDto.NoteId);
 
-                    if (note!.UserId == userId)
-                    {
-                        if (string.IsNullOrEmpty(encryptNoteRequestDto.Password))
+                        if (note!.IsEncrypted)
                         {
                             return new ServiceResponseWithoutData
                             {
                                 Success = false,
-                                Message = "Hasło nie może być puste"
+                                Message = "Notatka jest już zaszyfrowana"
                             };
                         }
 
-                        using (var hmac = new HMACSHA512())
+                        if (note.IsPublic)
                         {
-                            byte[] key = AesEncryption.CreateAesKeyFromPassword(encryptNoteRequestDto.Password!, hmac.Key);
-                            note.Content = AesEncryption.Encrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
-
-                            note.IsEncrypted = true;
-                            note.PasswordSalt = hmac.Key;
-                            note.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(encryptNoteRequestDto.Password!));
+                            return new ServiceResponseWithoutData
+                            {
+                                Success = false,
+                                Message = "Publiczna notatka nie może być zaszyfrowana"
+                            };
                         }
 
-                        await _context.SaveChangesAsync();
+                        if (note!.UserId == userId)
+                        {
+                            if (string.IsNullOrEmpty(encryptNoteRequestDto.Password))
+                            {
+                                return new ServiceResponseWithoutData
+                                {
+                                    Success = false,
+                                    Message = "Hasło nie może być puste"
+                                };
+                            }
+
+                            using (var aes = Aes.Create())
+                            {
+                                aes.GenerateIV();
+                                note.Iv = Convert.ToBase64String(aes.IV);
+                            }
+
+                            using (var hmac = new HMACSHA512())
+                            {
+                                byte[] key = AesEncryption.CreateAesKeyFromPassword(encryptNoteRequestDto.Password!, hmac.Key);
+                                note.Content = AesEncryption.Encrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
+
+                                note.IsEncrypted = true;
+                                note.PasswordSalt = hmac.Key;
+                                note.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(encryptNoteRequestDto.Password!));
+                            }
+
+                            await _context.SaveChangesAsync();
+
+                            return new ServiceResponseWithoutData
+                            {
+                                Success = true,
+                                Message = "Notatka została zaszyfrowana"
+                            };
+                        }
 
                         return new ServiceResponseWithoutData
                         {
-                            Success = true,
-                            Message = "Notatka została zaszyfrowana"
+                            Success = false,
+                            Message = "Nie masz uprawnień do zaszyfrowania tej notatki"
                         };
                     }
 
                     return new ServiceResponseWithoutData
                     {
                         Success = false,
-                        Message = "Nie masz uprawnień do zaszyfrowania tej notatki"
+                        Message = "Nie znaleziono notatki"
                     };
                 }
 
                 return new ServiceResponseWithoutData
                 {
                     Success = false,
-                    Message = "Nie znaleziono notatki"
+                    Message = "Nie znaleziono użytkownika"
                 };
             }
-
-            return new ServiceResponseWithoutData
+            catch (Exception)
             {
-                Success = false,
-                Message = "Nie znaleziono użytkownika"
-            };
+                return new ServiceResponseWithoutData
+                {
+                    Success = false,
+                    Message = "Wystąpił błąd po stronie serwera"
+                };
+            }
         }
 
         // TESTED
@@ -441,30 +467,41 @@ namespace SecureNotes.API.Services
         // TESTED
         public async Task<ServiceResponse<List<GetNoteDto>>> GetAllPublicNotes()
         {
-            if (await _context.Notes.AnyAsync(n => n.IsPublic))
+            try
             {
-                var notes = await _context.Notes.Where(n => n.IsPublic).ToListAsync();
-                var notesDto = notes.Select(n => new GetNoteDto
+                if (await _context.Notes.AnyAsync(n => n.IsPublic))
                 {
-                    NoteId = n.Id,
-                    Title = n.Title,
-                    CreationDate = n.CreationDate,
-                    IsPublic = n.IsPublic,
-                    IsEncrypted = n.IsEncrypted
-                }).ToList();
+                    var notes = await _context.Notes.Where(n => n.IsPublic).ToListAsync();
+                    var notesDto = notes.Select(n => new GetNoteDto
+                    {
+                        NoteId = n.Id,
+                        Title = n.Title,
+                        CreationDate = n.CreationDate,
+                        IsPublic = n.IsPublic,
+                        IsEncrypted = n.IsEncrypted
+                    }).ToList();
+
+                    return new ServiceResponse<List<GetNoteDto>>
+                    {
+                        Success = true,
+                        Data = notesDto
+                    };
+                }
 
                 return new ServiceResponse<List<GetNoteDto>>
                 {
                     Success = true,
-                    Data = notesDto
+                    Message = "Brak publicznych notatek"
                 };
             }
-
-            return new ServiceResponse<List<GetNoteDto>>
+            catch (Exception)
             {
-                Success = false,
-                Message = "Brak publicznych notatek"
-            };
+                return new ServiceResponse<List<GetNoteDto>>
+                {
+                    Success = false,
+                    Message = "Wystąpił błąd po stronie serwera"
+                };
+            }
         }
 
         // TESTED
@@ -587,6 +624,18 @@ namespace SecureNotes.API.Services
                                         };
                                     }
                                 }
+
+                                using (var aes = Aes.Create())
+                                {
+                                    aes.IV = Convert.FromBase64String(note.Iv!);
+                                }
+
+                                byte[] key = AesEncryption.CreateAesKeyFromPassword(makeNotePublicRequestDto.Password!, note.PasswordSalt!);
+                                note.Content = AesEncryption.Decrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
+
+                                note.IsEncrypted = false;
+                                note.PasswordSalt = null;
+                                note.PasswordHash = null;
                             }
                         }
 

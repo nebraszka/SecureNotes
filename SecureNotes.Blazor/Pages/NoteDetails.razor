@@ -1,5 +1,6 @@
 @using SecureNotes.Blazor.Services
 @using SecureNotes.API.Models.NoteDtos
+@using Markdig
 
 @page "/note-content/{noteId:guid}"
 @inject INoteService noteService
@@ -29,7 +30,7 @@ else if (!loading && noteDetails != null)
     <div class="note-details">
     <h4>@noteDetails.Title</h4>
     <div class="note-content">
-        <p>@noteDetails.Content</p>
+        @((MarkupString)Markdown.ToHtml(noteDetails.Content ?? ""))
     </div>
     <div class="note-metadata">
         <p><em>Utworzono: @noteDetails.CreationDate.ToShortDateString()</em></p>

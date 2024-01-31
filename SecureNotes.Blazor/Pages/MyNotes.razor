@@ -45,7 +45,7 @@ else
                         <a href="@($"note-content/{note.NoteId}?isEncrypted={note.IsEncrypted}")" class="btn btn-primary">Zobacz</a>
                     </td>
                     <td>
-                        @* <a href="@($"note/{note.NoteId}")" class="btn btn-primary">Zarządzaj</a> *@
+                        <a href="@($"edit-note/{note.NoteId}?isEncrypted={note.IsEncrypted}")" class="btn btn-primary">Zarządzaj</a>
                     </td>
                 </tr>
             }
@@ -53,4 +53,4 @@ else
     </table>
 }
 
-<a href="@($"note")" class="btn btn-primary">Dodaj nową notatkę</a>
+<a href="@($"create-note")" class="btn btn-primary">Dodaj nową notatkę</a>

@@ -1,0 +1,77 @@
+@using SecureNotes.Blazor.Services
+@using SecureNotes.API.Models.NoteDtos
+@using Markdig
+
+@page "/create-note"
+@inject INoteService noteService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@attribute [Authorize]
+
+<h3>Utwórz nową notatkę</h3>
+
+<EditForm Model="@addNoteDto" OnValidSubmit="HandleValidSubmit">
+    <div class="form-group">
+        <label for="title">Tytuł</label>
+        <InputText id="title" class="form-control" @bind-Value="addNoteDto.Title" />
+    </div>
+    <div class="form-group">
+        <label for="content">Treść (Markdown)</label>
+        <textarea id="content" class="form-control" @bind="@addNoteDto.Content"></textarea>
+    </div>
+    <div class="form-group">
+        <label>
+            <InputCheckbox @bind-Value="addNoteDto.IsPublic" />
+            Publiczna
+        </label>
+    </div>
+    @if (!addNoteDto.IsPublic)
+    {
+        <div class="form-group">
+            <label>
+                <InputCheckbox @bind-Value="addNoteDto.IsEncrypted" />
+                Zaszyfrowana
+            </label>
+        </div>
+        @if (addNoteDto.IsEncrypted)
+        {
+            <div class="form-group">
+                <label for="password">Hasło do odszyfrowania</label>
+                <InputText id="password" class="form-control" @bind-Value="addNoteDto.Password" />
+            </div>
+        }
+    }
+    <button type="submit" class="btn btn-success">Utwórz notatkę</button>
+    <button class="btn btn-warning" onclick="history.back();">Powrót</button>
+</EditForm>
+
+<hr />
+<h4>Podgląd</h4>
+<div class="markdown-content">
+    @((MarkupString)Markdown.ToHtml(addNoteDto.Content ?? ""))
+</div>
+
+@code {
+    private AddNoteDto addNoteDto = new AddNoteDto();
+
+    private async Task HandleValidSubmit()
+    {
+        addNoteDto.CreationDate = DateTime.UtcNow;
+
+        var result = await noteService.CreateNote(addNoteDto);
+
+        if (result.Success)
+        {
+            NavigationManager.NavigateTo("/my-notes");
+        }
+        else
+        {
+            // Obsługa błędów
+        }
+    }
+
+    private async Task GoBack()
+    {
+        await JSRuntime.InvokeVoidAsync("history.back");
+    }
+}

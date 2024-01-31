@@ -1,0 +1,312 @@
+@using SecureNotes.API.Models.NoteDtos
+@using SecureNotes.Blazor.Services
+
+@page "/edit-note/{noteId:guid}"
+
+@inject INoteService noteService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@attribute [Authorize]
+
+<h3>Edytuj Notatkę</h3>
+
+@if (IsEncrypted)
+{
+    <p>Notatka jest zaszyfrowana. Wprowadź hasło, aby ją odszyfrować.</p>
+    <EditForm Model="@request" OnValidSubmit="DecryptNoteForEdit">
+        <div class="form-group">
+            <label for="password">Hasło</label>
+            <InputText id="password" class="form-control" @bind-Value="request.Password" />
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Odszyfruj</button>
+        </div>
+    </EditForm>
+}
+else if (!loading && noteDetails != null)
+{
+    <EditForm Model="@updateNoteDto" OnValidSubmit="HandleUpdateNote">
+    <div class="form-group">
+        <label for="title">Tytuł</label>
+        <InputText id="title" class="form-control" @bind-Value="updateNoteDto.Title" />
+    </div>
+    <div class="form-group">
+        <label for="content">Treść (Markdown)</label>
+        <textarea id="content" class="form-control" @bind="@updateNoteDto.Content"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+</EditForm>
+
+    @if (!noteDetails.IsPublic && !noteDetails.IsEncrypted)
+    {
+        <button class="btn btn-secondary" @onclick="MakeNotePublic">Zrób notatkę publiczną</button>
+    }
+
+    @if (noteDetails.IsEncrypted)
+    {
+        <button class="btn btn-info" @onclick="DecryptNote">Odszyfruj notatkę</button>
+        <button class="btn btn-info" @onclick="ShowChangePasswordDialog">Zmień hasło</button>
+    }
+
+    @if (!noteDetails.IsEncrypted && !noteDetails.IsPublic)
+    {
+        <button class="btn btn-info" @onclick="ShowEncryptDialog">Zaszyfruj notatkę</button>
+    }
+
+    <button class="btn btn-danger" @onclick="DeleteNote">Usuń notatkę</button>
+}
+
+@if (showChangePasswordDialog)
+{
+    <div class="modal" style="display:block" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Zmiana Hasła</h5>
+                <button type="button" class="close" @onclick="() => showChangePasswordDialog = false">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="oldPassword">Stare Hasło</label>
+                    <InputText id="oldPassword" class="form-control" @bind-Value="oldPassword" />
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Nowe Hasło</label>
+                    <InputText id="newPassword" class="form-control" @bind-Value="newPassword" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="() => showChangePasswordDialog = false">Anuluj</button>
+                <button class="btn btn-primary" @onclick="ChangePassword">Zmień Hasło</button>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@if (showEncryptDialog)
+{
+    <div class="modal" style="display:block" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Zaszyfruj Notatkę</h5>
+                <button type="button" class="close" @onclick="() => showEncryptDialog = false">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <EditForm Model="@this" OnValidSubmit="EncryptNote">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="encryptionPassword">Podaj Hasło do Szyfrowania</label>
+                        <InputText id="encryptionPassword" class="form-control" @bind-Value="encryptionPassword" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        @onclick="() => showEncryptDialog = false">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Zaszyfruj</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+}
+
+<p>@message</p>
+<button class="btn btn-secondary" @onclick="GoBack">Powrót</button>
+
+@code {
+    [Parameter]
+    public Guid noteId { get; set; }
+    public bool IsEncrypted { get; set; }
+
+    private GetNoteDetailsRequestDto request = new GetNoteDetailsRequestDto();
+    private UpdateNoteDto updateNoteDto = new UpdateNoteDto();
+    private GetNoteDetailsDto? noteDetails = null;
+    private bool loading = true;
+    private string message = "";
+
+    private bool showChangePasswordDialog = false;
+    private string oldPassword = string.Empty;
+    private string newPassword = string.Empty;
+
+    private bool showEncryptDialog = false;
+    private string encryptionPassword = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsEncrypted = new Uri(NavigationManager.Uri).Query.Contains("isEncrypted=True");
+
+        if (!IsEncrypted)
+        {
+            await LoadNoteDetails();
+        }
+    }
+
+    private void ShowChangePasswordDialog()
+    {
+        showChangePasswordDialog = true;
+    }
+
+    private void ShowEncryptDialog()
+    {
+        showEncryptDialog = true;
+    }
+
+    private async Task DecryptNoteForEdit()
+    {
+        IsEncrypted = false;
+        await LoadNoteDetails();
+    }
+
+    private async Task LoadNoteDetails()
+    {
+        try
+        {
+            request.NoteId = noteId;
+            var response = await noteService.GetNoteDetails(request);
+            if (response.Success)
+            {
+                noteDetails = response.Data!;
+
+                updateNoteDto.NoteId = noteId;
+                updateNoteDto.Title = noteDetails.Title;
+                updateNoteDto.Content = noteDetails.Content;
+
+                loading = false;
+            }
+            else
+            {
+                if (response != null)
+                {
+                    message = response.Message!;
+                }
+                else
+                {
+                    message = "Wystąpił nieznany błąd.";
+                }
+            }
+        }
+        catch
+        {
+            message = "Wystąpił nieznany błąd.";
+        }
+    }
+
+    private async Task HandleUpdateNote()
+    {
+        var updateResponse = await noteService.UpdateNote(updateNoteDto);
+        if (updateResponse.Success)
+        {
+            NavigationManager.NavigateTo("/my-notes");
+        }
+        else
+        {
+            message = updateResponse.Message ?? string.Empty;
+        }
+    }
+
+    private async Task MakeNotePublic()
+    {
+        var publicResponse = await noteService.MakeNotePublic(new MakeNotePublicRequestDto
+            {
+                NoteId = noteId,
+                Password = request.Password
+            });
+        if (publicResponse.Success)
+        {
+            await LoadNoteDetails();
+        }
+        else
+        {
+            message = publicResponse.Message ?? string.Empty;
+        }
+    }
+
+    private async Task EncryptNote()
+    {
+        var encryptResponse = await noteService.EncryptNote(new EncryptNoteRequestDto
+            {
+                NoteId = noteId,
+                Password = encryptionPassword
+            });
+        if (encryptResponse.Success)
+        {
+            showEncryptDialog = false;
+            request.Password = encryptionPassword;
+            encryptionPassword = string.Empty;
+            await LoadNoteDetails();
+        }
+        else
+        {
+            message = encryptResponse.Message ?? string.Empty;
+        }
+    }
+
+    private async Task DecryptNote()
+    {
+        var decryptResponse = await noteService.DecryptNote(new DecryptNoteRequestDto
+            {
+                NoteId = noteId,
+                Password = request.Password!
+            });
+        if (decryptResponse.Success)
+        {
+            request.Password = string.Empty;
+            await LoadNoteDetails();
+        }
+        else
+        {
+            message = decryptResponse.Message ?? string.Empty;
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        var changePasswordResponse = await noteService.ChangeNotePassword(new ChangeNotePasswordRequestDto
+            {
+                NoteId = noteId,
+                OldPassword = oldPassword,
+                NewPassword = newPassword
+            });
+
+        if (changePasswordResponse.Success)
+        {
+            showChangePasswordDialog = false;
+            request.Password = newPassword;
+        }
+        else
+        {
+            message = changePasswordResponse.Message ?? string.Empty;
+        }
+
+        oldPassword = string.Empty;
+        newPassword = string.Empty;
+    }
+
+    private async Task DeleteNote()
+    {
+        var deleteResponse = await noteService.DeleteNote(new DeleteNoteRequestDto
+            {
+                NoteId = noteId,
+                Password = request.Password
+            });
+
+        if (deleteResponse.Success)
+        {
+            NavigationManager.NavigateTo("/my-notes");
+        }
+        else
+        {
+            message = deleteResponse.Message ?? string.Empty;
+        }
+    }
+
+    private async Task GoBack()
+    {
+        await JSRuntime.InvokeVoidAsync("history.back");
+    }
+}

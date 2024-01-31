@@ -52,7 +52,7 @@ namespace SecureNotes.API.Controllers
             return Ok(response);
         }
 
-        [HttpDelete, Authorize]
+        [HttpPost("delete"), Authorize]
         public async Task<ActionResult<ServiceResponseWithoutData>> DeleteNote([FromBody] DeleteNoteRequestDto deleteNoteRequest)
         {
             var response = await _noteService.DeleteNote(userId, deleteNoteRequest);
