@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.EntityFrameworkCore;
 using SecureNotes.API.Data;
 using SecureNotes.API.Encryption;
@@ -56,6 +55,14 @@ namespace SecureNotes.API.Services
                                         };
                                     }
                                 }
+
+                                using (var aes = Aes.Create())
+                                {
+                                    aes.IV = Convert.FromBase64String(note.Iv!);
+                                }
+
+                                byte[] key = AesEncryption.CreateAesKeyFromPassword(changeNotePasswordRequest.OldPassword!, note.PasswordSalt!);
+                                note.Content = AesEncryption.Decrypt(note.Content!, Convert.ToBase64String(key), note.Iv!);
                             }
                         }
 

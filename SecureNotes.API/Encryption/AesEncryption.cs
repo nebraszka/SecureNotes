@@ -53,6 +53,7 @@ namespace SecureNotes.API.Encryption
             }
         }
 
+        // PBKDF2
         public static byte[] CreateAesKeyFromPassword(string password, byte[] salt)
         {
             int iterations = 10000;
